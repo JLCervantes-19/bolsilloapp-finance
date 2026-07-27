@@ -1,0 +1,21 @@
+# Dependencias
+node_modules/
+
+# Secretos — nunca subir
+.env
+.env.local
+*.env
+
+# Sistema
+.DS_Store
+
+# Salidas generadas / no necesarias para que la app corra
+graphify-out/
+.vercel/
+
+# Artefactos del prototipo original (no los usa la app real, solo referencia
+# histórica) — no se suben para mantener el repo mínimo
+_ds/
+screenshots/
+Bolsillo App.dc.html
+support.js

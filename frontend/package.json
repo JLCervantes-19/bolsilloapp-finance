@@ -1,0 +1,15 @@
+{
+  "name": "bolsillo-frontend",
+  "version": "1.0.0",
+  "description": "Bolsillo — SPA Vanilla JS + Tailwind v4, sistema Liquid Glass",
+  "type": "module",
+  "scripts": {
+    "dev:css": "tailwindcss -i ./public/assets/css/main.css -o ./public/assets/css/build.css --watch",
+    "build:css": "tailwindcss -i ./public/assets/css/main.css -o ./public/assets/css/build.css --minify",
+    "serve": "npx serve public -l 5173"
+  },
+  "devDependencies": {
+    "@tailwindcss/cli": "^4.1.4",
+    "tailwindcss": "^4.1.4"
+  }
+}

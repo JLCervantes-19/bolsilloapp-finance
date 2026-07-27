@@ -1,0 +1,133 @@
+/*
+  Bolsillo — Liquid Glass tokens (v2, claro / "silver glass")
+  Segundo pivote explícito del usuario: de vidrio oscuro con bloom vívido
+  hacia un vidrio claro plateado inspirado en una referencia tipo
+  "Monolith" (fondo gris-plata muy claro, cards blancas translúcidas,
+  sombra suave hacia abajo en vez de glow, texto navy oscuro sobre claro,
+  CTAs primarios en píldora sólida oscura, y el color reservado casi
+  exclusivamente a badges de ícono e indicadores de cambio).
+  Se conservan: familia tipográfica, escala de radios/espaciado, y el
+  significado semántico fijo de cada color financiero. La única superficie
+  sólida oscura del sistema — el widget "hero" (ActivityChart) — se queda
+  igual que antes: es exactamente el mismo rol que cumple el mapa "Live"
+  oscuro de la referencia.
+*/
+:root {
+  color-scheme: light;
+
+  /* ---------- Fondo base — plata clara con brillo diagonal sutil ---------- */
+  --bg-0: #eef1f6;
+  --bg-bloom-1: #dbe7fb;
+  --bg-bloom-2: #e6e9f2;
+  --bg-bloom-3: #f2f4f8;
+
+  /* ---------- Vidrio ---------- */
+  --glass-fill: rgba(255, 255, 255, 0.55);
+  --glass-fill-strong: rgba(255, 255, 255, 0.78);
+  --glass-fill-pressed: rgba(255, 255, 255, 0.94);
+  --glass-border: rgba(18, 20, 28, 0.07);
+  --glass-border-strong: rgba(18, 20, 28, 0.12);
+  --glass-highlight: rgba(255, 255, 255, 0.95);
+  --glass-blur: 22px;
+  --glass-blur-lg: 34px;
+  --glass-saturate: 180%;
+
+  /* ---------- Texto ---------- */
+  --text-primary: #12141c;
+  --text-secondary: rgba(18, 20, 28, 0.6);
+  --text-tertiary: rgba(18, 20, 28, 0.4);
+  --text-on-accent: #ffffff;
+
+  /* ---------- Texto fijo para las superficies sólidas oscuras
+       (ActivityChart) — no deben heredar el texto oscuro del tema claro. ---------- */
+  --text-on-dark-primary: #f5f6fa;
+  --text-on-dark-secondary: rgba(245, 246, 250, 0.65);
+
+  /* ---------- Tinta (CTAs sólidos) — píldora oscura, como "Download
+       Report" / "Upgrade Plan" / "Auto-Optimize" en la referencia ---------- */
+  --ink: #14161f;
+  --ink-hover: #262a3a;
+
+  /* ---------- Acentos financieros — mismo significado que el sistema original ---------- */
+  --orange: #e8734f;
+  --green: #16a672;
+  --teal: #0ea894;
+  --terracotta: #e8543f;
+  --navy: #4a4fd0;
+  --yellow: #c98a1c;
+  --blue: #3b7bf6;
+
+  --positive: var(--teal);
+  --positive-2: var(--green);
+  --negative: var(--terracotta);
+  --negative-2: var(--navy);
+  --warning: var(--yellow);
+  --brand-accent: var(--blue);
+
+  --positive-tint: rgba(14, 168, 148, 0.14);
+  --negative-tint: rgba(232, 84, 63, 0.13);
+  --warning-tint: rgba(201, 138, 28, 0.14);
+  --neutral-tint: rgba(18, 20, 28, 0.06);
+  --brand-tint: rgba(59, 123, 246, 0.12);
+
+  /* ---------- Tipografía (heredada del sistema original) ---------- */
+  --font-primary: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+  --fs-xs: 11px;
+  --fs-sm: 12.5px;
+  --fs-base: 14px;
+  --fs-md: 15px;
+  --fs-lg: 17px;
+  --fs-xl: 20px;
+  --fs-2xl: 24px;
+  --fs-display: 34px;
+
+  --fw-regular: 400;
+  --fw-medium: 500;
+  --fw-semibold: 600;
+  --fw-bold: 700;
+  --fw-extrabold: 800;
+
+  --lh-tight: 1.08;
+  --lh-base: 1.45;
+
+  /* ---------- Espaciado y radios (heredados) ---------- */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-7: 32px;
+  --space-8: 40px;
+
+  --radius-xl: 28px;
+  --radius-lg: 24px;
+  --radius-md: 16px;
+  --radius-sm: 14px;
+  --radius-pill: 999px;
+  --radius-badge: 11px;
+
+  /* ---------- Sombra — ahora hacia abajo/suave (el vidrio flota sobre gris
+       claro, no glow sobre negro) ---------- */
+  --shadow-glass: 0 1px 1px rgba(255, 255, 255, 0.7) inset, 0 8px 24px rgba(18, 20, 28, 0.07);
+  --shadow-glass-lg: 0 1px 1px rgba(255, 255, 255, 0.8) inset, 0 20px 48px rgba(18, 20, 28, 0.1);
+  --shadow-floating: 0 16px 36px rgba(18, 20, 28, 0.16);
+
+  /* ---------- Motion ---------- */
+  --ease-spring: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+  --duration-fast: 150ms;
+  --duration-base: 240ms;
+  --duration-card-in: 520ms;
+  --duration-drawer: 380ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --duration-fast: 1ms;
+    --duration-base: 1ms;
+    --duration-card-in: 1ms;
+    --duration-drawer: 1ms;
+  }
+}
