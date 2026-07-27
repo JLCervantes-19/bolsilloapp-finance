@@ -4,6 +4,7 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { validateBody } from "../middlewares/validate.middleware.js";
 import { ApiError } from "../utils/ApiError.js";
 import { supabaseAdmin, supabaseAnon as anonClient } from "../config/supabase.js";
+import { translateAuthError } from "../utils/authErrors.js";
 
 /**
  * Capa delgada sobre Supabase Auth — el backend no gestiona contraseñas ni
@@ -14,17 +15,31 @@ import { supabaseAdmin, supabaseAnon as anonClient } from "../config/supabase.js
  * puede llamar a Supabase Auth directo con supabase-js.
  */
 
-const credentialsSchema = z.object({
-  email: z.string().email(),
-  password: z.string().min(8),
+// Misma política que el checklist en vivo del frontend
+// (frontend/public/js/utils/passwordPolicy.js) — deben coincidir exacto.
+const passwordSchema = z
+  .string()
+  .min(8, "La contraseña debe tener al menos 8 caracteres")
+  .regex(/[a-z]/, "La contraseña debe tener al menos una letra minúscula")
+  .regex(/[A-Z]/, "La contraseña debe tener al menos una letra mayúscula")
+  .regex(/[0-9]/, "La contraseña debe tener al menos un número");
+
+const signupSchema = z.object({
+  email: z.string().email("Ingresá un correo válido"),
+  password: passwordSchema,
   full_name: z.string().min(1).max(120).optional(),
+});
+
+const loginSchema = z.object({
+  email: z.string().email("Ingresá un correo válido"),
+  password: z.string().min(1, "Ingresá tu contraseña"),
 });
 
 export const authRouter = Router();
 
 authRouter.post(
   "/signup",
-  validateBody(credentialsSchema),
+  validateBody(signupSchema),
   asyncHandler(async (req, res) => {
     const { email, password, full_name } = req.body;
     const { data, error } = await anonClient.auth.signUp({
@@ -32,18 +47,18 @@ authRouter.post(
       password,
       options: { data: { full_name } },
     });
-    if (error) throw ApiError.badRequest(error.message);
+    if (error) throw ApiError.badRequest(translateAuthError(error.message));
     res.status(201).json({ data });
   })
 );
 
 authRouter.post(
   "/login",
-  validateBody(credentialsSchema.pick({ email: true, password: true })),
+  validateBody(loginSchema),
   asyncHandler(async (req, res) => {
     const { email, password } = req.body;
     const { data, error } = await anonClient.auth.signInWithPassword({ email, password });
-    if (error) throw ApiError.unauthorized(error.message);
+    if (error) throw ApiError.unauthorized(translateAuthError(error.message));
     res.json({ data });
   })
 );
@@ -53,7 +68,7 @@ authRouter.post(
   validateBody(z.object({ refresh_token: z.string() })),
   asyncHandler(async (req, res) => {
     const { data, error } = await anonClient.auth.refreshSession({ refresh_token: req.body.refresh_token });
-    if (error) throw ApiError.unauthorized(error.message);
+    if (error) throw ApiError.unauthorized(translateAuthError(error.message));
     res.json({ data });
   })
 );
