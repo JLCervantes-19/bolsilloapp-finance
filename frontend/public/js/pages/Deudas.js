@@ -174,5 +174,10 @@ export async function renderDeudas(pageEl) {
 
   renderAll();
 
-  return () => sheet.root.remove();
+  const onRefresh = () => refreshAll();
+  window.addEventListener("bolsillo:refresh", onRefresh);
+  return () => {
+    window.removeEventListener("bolsillo:refresh", onRefresh);
+    sheet.root.remove();
+  };
 }

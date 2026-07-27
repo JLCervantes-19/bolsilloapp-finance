@@ -9,21 +9,18 @@ const monthLabel = new Date().toLocaleDateString("es-CO", { month: "long", year:
 const monthTitleCase = monthLabel.charAt(0).toUpperCase() + monthLabel.slice(1);
 
 export async function renderGastos(pageEl) {
-  let expenses, categories;
-  try {
-    [expenses, categories] = await Promise.all([financialService.listExpenses(), financialService.listCategories()]);
-  } catch (err) {
-    clear(pageEl);
-    pageEl.appendChild(h("p", { style: "color:var(--text-secondary)" }, `No se pudo cargar gastos: ${err.message}`));
-    return;
-  }
-
-  const expenseCategories = categories.filter((c) => c.kind === "expense");
+  let expenses = [];
+  let categories = [];
+  let expenseCategories = [];
   let activeFilter = "todas";
 
   const chipsRow = h("section", { class: "summary-row no-scrollbar" });
-  const totalCard = h("div", { class: "flex items-center justify-between glass", style: "border-radius:var(--radius-lg);padding:var(--space-4);margin-bottom:var(--space-4)" });
+  const totalCard = h("div", {
+    class: "flex items-center justify-between glass glass-in",
+    style: "border-radius:var(--radius-lg);padding:var(--space-4);margin-bottom:var(--space-4);--d:80",
+  });
   const list = h("div", { class: "tx-list" });
+  const meta = h("span", { class: "section-title__meta" });
 
   function renderChips() {
     clear(chipsRow);
@@ -35,9 +32,10 @@ export async function renderGastos(pageEl) {
 
   function renderList() {
     const filtered = expenses
-      .filter((t) => activeFilter === "todas" || t.categories?.name === activeFilter)
+      .filter((t) => activeFilter === "todas" || t.categorias?.name === activeFilter)
       .sort((a, b) => b.date.localeCompare(a.date));
     const total = filtered.reduce((s, t) => s + Number(t.amount), 0);
+    meta.textContent = `${expenses.length} movimientos`;
 
     clear(totalCard);
     totalCard.append(
@@ -51,13 +49,13 @@ export async function renderGastos(pageEl) {
       return;
     }
     list.append(
-      ...filtered.map((t) =>
-        h("div", { class: "tx-row" }, [
+      ...filtered.map((t, i) =>
+        h("div", { class: "tx-row glass-in", style: `--d:${Math.min(i, 10) * 30}` }, [
           h("div", { class: "flex items-center gap-3", style: "min-width:0" }, [
-            h("span", { style: `width:10px;height:10px;border-radius:50%;background:${t.categories?.color || "#787774"};flex:none` }),
+            h("span", { style: `width:10px;height:10px;border-radius:50%;background:${t.categorias?.color || "#787774"};flex:none` }),
             h("div", { style: "min-width:0" }, [
               h("p", { class: "tx-row__note" }, t.description || "Gasto"),
-              h("p", { class: "tx-row__meta" }, `${t.categories?.name || "Sin categoría"} · ${fmtDateShort(t.date)}`),
+              h("p", { class: "tx-row__meta" }, `${t.categorias?.name || "Sin categoría"} · ${fmtDateShort(t.date)}`),
             ]),
           ]),
           h("span", { class: "tx-row__amount" }, "-" + fmt(t.amount)),
@@ -72,15 +70,25 @@ export async function renderGastos(pageEl) {
     renderList();
   }
 
-  clear(pageEl);
-  pageEl.append(
-    PageHeader({ eyebrow: monthTitleCase, title: "Gastos" }),
-    SectionTitle({ label: "Gastos por categoría", meta: `${expenses.length} movimientos` }),
-    chipsRow,
-    totalCard,
-    list
-  );
+  async function load() {
+    [expenses, categories] = await Promise.all([financialService.listExpenses(), financialService.listCategories()]);
+    expenseCategories = categories.filter((c) => c.kind === "expense");
+    renderChips();
+    renderList();
+  }
 
-  renderChips();
-  renderList();
+  clear(pageEl);
+  pageEl.append(PageHeader({ eyebrow: monthTitleCase, title: "Gastos" }), SectionTitle({ label: "Gastos por categoría", meta }), chipsRow, totalCard, list);
+
+  try {
+    await load();
+  } catch (err) {
+    clear(pageEl);
+    pageEl.appendChild(h("p", { style: "color:var(--text-secondary)" }, `No se pudo cargar gastos: ${err.message}`));
+    return;
+  }
+
+  const onRefresh = () => load().catch(() => {});
+  window.addEventListener("bolsillo:refresh", onRefresh);
+  return () => window.removeEventListener("bolsillo:refresh", onRefresh);
 }

@@ -330,6 +330,31 @@
   gap: var(--space-2);
   scroll-snap-align: start;
 }
+
+/* Anillo de brillo breve en las cards cuyo valor cambió en un refresh —
+   arranca después de que termina su propia entrada (--d + duración de
+   glass-in). Vive en ::after, NO en `animation` del elemento mismo: ese ya
+   lo usa .glass-in para la entrada, y `animation` no es aditivo entre
+   reglas — poner otra ahí habría pisado la entrada silenciosamente. */
+@keyframes pulseRing {
+  0% { box-shadow: 0 0 0 0 var(--brand-tint); opacity: 1; }
+  60% { box-shadow: 0 0 0 8px var(--brand-tint); }
+  100% { box-shadow: 0 0 0 0 rgba(59, 123, 246, 0); opacity: 0; }
+}
+.summary-card--pulse::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  animation: pulseRing 900ms var(--ease-out) both;
+  animation-delay: calc(var(--d, 0) * 1ms + var(--duration-card-in));
+}
+@media (prefers-reduced-motion: reduce) {
+  .summary-card--pulse::after {
+    animation: none;
+  }
+}
 .summary-card__icon {
   width: 32px;
   height: 32px;
