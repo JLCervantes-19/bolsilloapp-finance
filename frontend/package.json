@@ -9,12 +9,9 @@
     "build": "npm run build:css",
     "serve": "npx serve public -l 5173"
   },
-  "devDependencies": {
-    "@tailwindcss/cli": "^4.1.4",
-    "tailwindcss": "^4.1.4"
-  },
   "dependencies": {
     "@supabase/supabase-js": "^2.45.4",
+    "@tailwindcss/cli": "^4.1.4",
     "compression": "^1.7.4",
     "cookie-parser": "^1.4.6",
     "cors": "^2.8.5",
@@ -23,6 +20,7 @@
     "express-rate-limit": "^7.4.1",
     "helmet": "^7.1.0",
     "morgan": "^1.10.0",
+    "tailwindcss": "^4.1.4",
     "ws": "^8.21.1",
     "zod": "^3.23.8"
   }
