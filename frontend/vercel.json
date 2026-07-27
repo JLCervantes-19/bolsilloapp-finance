@@ -1,5 +1,7 @@
 {
-  "buildCommand": "npm install && npm run build:css",
+  "framework": null,
+  "installCommand": "npm install",
+  "buildCommand": "npm run build",
   "outputDirectory": "public",
   "rewrites": [
     { "source": "/api/(.*)", "destination": "/api" }
