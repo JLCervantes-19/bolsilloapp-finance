@@ -1,0 +1,18 @@
+{
+  "name": "bolsillo. — Simplicidad para tu bolsillo",
+  "short_name": "bolsillo.",
+  "description": "Asistente financiero personal — saldo, gastos, deudas, ahorros y salud financiera en un vistazo.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#eef1f6",
+  "theme_color": "#0c0d14",
+  "lang": "es",
+  "icons": [
+    { "src": "/assets/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/assets/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/assets/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "/assets/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

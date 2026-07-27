@@ -1,0 +1,43 @@
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <radialGradient id="bloomA" cx="20%" cy="15%" r="65%">
+      <stop offset="0%" stop-color="#3a2f7a" stop-opacity="0.9"/>
+      <stop offset="100%" stop-color="#3a2f7a" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="bloomB" cx="88%" cy="90%" r="60%">
+      <stop offset="0%" stop-color="#0ea894" stop-opacity="0.55"/>
+      <stop offset="100%" stop-color="#0ea894" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="glass" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.22"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0.06"/>
+    </linearGradient>
+    <linearGradient id="coin" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffb18c"/>
+      <stop offset="100%" stop-color="#ff7d47"/>
+    </linearGradient>
+  </defs>
+
+  <!-- fondo base -->
+  <rect width="1024" height="1024" fill="#0c0d14"/>
+  <rect width="1024" height="1024" fill="url(#bloomA)"/>
+  <rect width="1024" height="1024" fill="url(#bloomB)"/>
+
+  <!-- tarjeta de vidrio central -->
+  <rect x="212" y="292" width="600" height="460" rx="88"
+        fill="url(#glass)" stroke="#ffffff" stroke-opacity="0.35" stroke-width="6"/>
+
+  <!-- solapa del bolsillo -->
+  <path d="M 212 460 Q 512 380 812 460" fill="none"
+        stroke="#f5f6fa" stroke-opacity="0.55" stroke-width="12" stroke-linecap="round"/>
+
+  <!-- moneda / acento (el punto de "bolsillo.") -->
+  <circle cx="700" cy="470" r="92" fill="url(#coin)"/>
+  <circle cx="700" cy="470" r="92" fill="none" stroke="#0c0d14" stroke-opacity="0.25" stroke-width="4"/>
+  <path d="M 700 428 v 84 M 674 448 h 52 a 22 22 0 0 1 0 44 h -52"
+        fill="none" stroke="#0c0d14" stroke-width="14" stroke-linecap="round" stroke-linejoin="round" opacity="0.75"/>
+
+  <!-- letra b, monograma -->
+  <text x="392" y="640" font-family="Helvetica Neue, Helvetica, Arial, sans-serif"
+        font-weight="800" font-size="360" fill="#f5f6fa">b</text>
+</svg>
