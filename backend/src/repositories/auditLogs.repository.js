@@ -4,7 +4,7 @@ import { ApiError } from "../utils/ApiError.js";
 export const auditLogsRepository = {
   async list(supabase, { limit = 50 } = {}) {
     const { data, error } = await supabase
-      .from("audit_logs")
+      .from("auditoria")
       .select("*")
       .order("created_at", { ascending: false })
       .limit(limit);

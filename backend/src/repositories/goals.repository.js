@@ -2,10 +2,10 @@ import { createBaseRepository } from "./base.repository.js";
 import { ApiError } from "../utils/ApiError.js";
 
 export const goalsRepository = {
-  ...createBaseRepository("goals"),
+  ...createBaseRepository("metas"),
 
   async getEmergencyFund(supabase) {
-    const { data, error } = await supabase.from("goals").select("*").eq("is_emergency_fund", true).maybeSingle();
+    const { data, error } = await supabase.from("metas").select("*").eq("is_emergency_fund", true).maybeSingle();
     if (error) throw ApiError.badRequest(error.message);
     return data;
   },

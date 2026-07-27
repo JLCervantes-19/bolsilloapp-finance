@@ -76,8 +76,14 @@ login.
   el flujo de caja neto mes a mes hacia atrás (`analytics.service.js`).
   Para una serie 100% exacta haría falta una tabla de snapshots periódicos
   — no incluida porque tampoco estaba en el alcance de la Fase 1.
-- **"Fijos vs. variables"** usa la columna real `expenses.is_fixed`, no un
+- **"Fijos vs. variables"** usa la columna real `gastos.is_fixed`, no un
   set de categorías hardcodeado como en el mockup.
+- **Tablas en español.** El schema (`schema_supabase.txt`) usa nombres de
+  tabla literales en español (`usuarios`, `categorias`, `ingresos`, `gastos`,
+  `deudas`, `presupuestos`, `alertas`, `metas`, `ahorros`, `inversiones`,
+  `configuracion`, `auditoria`) — las rutas de la API (`/api/expenses`, etc.)
+  se mantienen en inglés porque son el contrato público ya consumido por el
+  frontend; renombrarlas es un cambio aparte, no incluido acá.
 
 ## Endpoints principales
 

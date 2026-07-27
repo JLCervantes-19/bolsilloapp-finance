@@ -52,7 +52,7 @@ export async function registerQuickIncome(
   if (allocate_investment_pct > 0) {
     const alloc = Math.round(amount * (allocate_investment_pct / 100));
     const { data: existing } = await supabase
-      .from("investments")
+      .from("inversiones")
       .select("*")
       .eq("name", "Aportes automáticos")
       .maybeSingle();

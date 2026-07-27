@@ -1,6 +1,7 @@
 -- ============================================================================
 -- BOLSILLO — Sistema saldo.
 -- Schema PostgreSQL para Supabase — Fase 1 (Base de datos)
+-- Tablas en español (renombradas — ver migración rename_tables_to_spanish).
 -- Ejecutar de punta a punta en el SQL Editor de Supabase (un solo statement run).
 -- ============================================================================
 
@@ -14,9 +15,9 @@ create extension if not exists "pgcrypto";
 -- ============================================================================
 
 -- ---------------------------------------------------------------------------
--- profiles — 1:1 con auth.users
+-- usuarios — 1:1 con auth.users
 -- ---------------------------------------------------------------------------
-create table public.profiles (
+create table public.usuarios (
   id          uuid primary key references auth.users(id) on delete cascade,
   full_name   text,
   avatar_url  text,
@@ -25,12 +26,12 @@ create table public.profiles (
   updated_at  timestamptz not null default now()
 );
 
-comment on table public.profiles is 'Perfil de usuario, 1:1 con auth.users.';
+comment on table public.usuarios is 'Perfil de usuario, 1:1 con auth.users.';
 
 -- ---------------------------------------------------------------------------
--- categories — categorías de ingreso/gasto, por defecto y personalizadas
+-- categorias — categorías de ingreso/gasto, por defecto y personalizadas
 -- ---------------------------------------------------------------------------
-create table public.categories (
+create table public.categorias (
   id          uuid primary key default gen_random_uuid(),
   user_id     uuid not null references auth.users(id) on delete cascade,
   name        text not null,
@@ -41,15 +42,15 @@ create table public.categories (
   updated_at  timestamptz not null default now()
 );
 
-comment on table public.categories is 'Categorías de ingreso/gasto por usuario, sembradas por defecto al registrarse.';
+comment on table public.categorias is 'Categorías de ingreso/gasto por usuario, sembradas por defecto al registrarse.';
 
 -- ---------------------------------------------------------------------------
--- incomes — ingresos fijos, variables, recurrentes
+-- ingresos — ingresos fijos, variables, recurrentes
 -- ---------------------------------------------------------------------------
-create table public.incomes (
+create table public.ingresos (
   id           uuid primary key default gen_random_uuid(),
   user_id      uuid not null references auth.users(id) on delete cascade,
-  category_id  uuid references public.categories(id) on delete set null,
+  category_id  uuid references public.categorias(id) on delete set null,
   amount       numeric(14,2) not null check (amount > 0),
   description  text,
   source       text,
@@ -59,15 +60,15 @@ create table public.incomes (
   updated_at   timestamptz not null default now()
 );
 
-comment on table public.incomes is 'Ingresos: salario, roll-over, ingresos extra, rendimientos.';
+comment on table public.ingresos is 'Ingresos: salario, roll-over, ingresos extra, rendimientos.';
 
 -- ---------------------------------------------------------------------------
--- expenses — gastos fijos y variables
+-- gastos — gastos fijos y variables
 -- ---------------------------------------------------------------------------
-create table public.expenses (
+create table public.gastos (
   id              uuid primary key default gen_random_uuid(),
   user_id         uuid not null references auth.users(id) on delete cascade,
-  category_id     uuid references public.categories(id) on delete set null,
+  category_id     uuid references public.categorias(id) on delete set null,
   amount          numeric(14,2) not null check (amount > 0),
   description     text,
   payment_method  text,
@@ -78,12 +79,12 @@ create table public.expenses (
   updated_at      timestamptz not null default now()
 );
 
-comment on table public.expenses is 'Gastos fijos (arriendo, servicios, suscripciones) y variables (mercado, transporte, antojos).';
+comment on table public.gastos is 'Gastos fijos (arriendo, servicios, suscripciones) y variables (mercado, transporte, antojos).';
 
 -- ---------------------------------------------------------------------------
--- debts — deudas fijas/variables, motor snowball/avalanche
+-- deudas — deudas fijas/variables, motor snowball/avalanche
 -- ---------------------------------------------------------------------------
-create table public.debts (
+create table public.deudas (
   id                uuid primary key default gen_random_uuid(),
   user_id           uuid not null references auth.users(id) on delete cascade,
   name              text not null,
@@ -99,15 +100,15 @@ create table public.debts (
   updated_at        timestamptz not null default now()
 );
 
-comment on table public.debts is 'Deudas del usuario — insumo del Debt Engine (bola de nieve / avalancha).';
+comment on table public.deudas is 'Deudas del usuario — insumo del Debt Engine (bola de nieve / avalancha).';
 
 -- ---------------------------------------------------------------------------
--- budgets — topes mensuales por categoría
+-- presupuestos — topes mensuales por categoría
 -- ---------------------------------------------------------------------------
-create table public.budgets (
+create table public.presupuestos (
   id           uuid primary key default gen_random_uuid(),
   user_id      uuid not null references auth.users(id) on delete cascade,
-  category_id  uuid not null references public.categories(id) on delete cascade,
+  category_id  uuid not null references public.categorias(id) on delete cascade,
   month        date not null,
   cap_amount   numeric(14,2) not null check (cap_amount >= 0),
   created_at   timestamptz not null default now(),
@@ -115,12 +116,12 @@ create table public.budgets (
   unique (user_id, category_id, month)
 );
 
-comment on table public.budgets is 'Tope mensual de gasto por categoría. month = primer día del mes (YYYY-MM-01).';
+comment on table public.presupuestos is 'Tope mensual de gasto por categoría. month = primer día del mes (YYYY-MM-01).';
 
 -- ---------------------------------------------------------------------------
--- alerts — avisos y notificaciones generadas por el Recommendation Engine
+-- alertas — avisos y notificaciones generadas por el Recommendation Engine
 -- ---------------------------------------------------------------------------
-create table public.alerts (
+create table public.alertas (
   id          uuid primary key default gen_random_uuid(),
   user_id     uuid not null references auth.users(id) on delete cascade,
   type        text not null,
@@ -130,12 +131,12 @@ create table public.alerts (
   created_at  timestamptz not null default now()
 );
 
-comment on table public.alerts is 'Insight cards generadas por el Recommendation & Alert Engine (backend), consumidas por el dashboard.';
+comment on table public.alertas is 'Insight cards generadas por el Recommendation & Alert Engine (backend), consumidas por el dashboard.';
 
 -- ---------------------------------------------------------------------------
--- goals — metas de ahorro, incluye fondo de emergencia
+-- metas — metas de ahorro, incluye fondo de emergencia
 -- ---------------------------------------------------------------------------
-create table public.goals (
+create table public.metas (
   id                  uuid primary key default gen_random_uuid(),
   user_id             uuid not null references auth.users(id) on delete cascade,
   name                text not null,
@@ -148,27 +149,27 @@ create table public.goals (
   updated_at          timestamptz not null default now()
 );
 
-comment on table public.goals is 'Metas de ahorro. is_emergency_fund marca la meta que representa el fondo de emergencia.';
+comment on table public.metas is 'Metas de ahorro. is_emergency_fund marca la meta que representa el fondo de emergencia.';
 
 -- ---------------------------------------------------------------------------
--- savings — abonos de ahorro (emergencia, automáticos, manuales)
+-- ahorros — abonos de ahorro (emergencia, automáticos, manuales)
 -- ---------------------------------------------------------------------------
-create table public.savings (
+create table public.ahorros (
   id          uuid primary key default gen_random_uuid(),
   user_id     uuid not null references auth.users(id) on delete cascade,
-  goal_id     uuid references public.goals(id) on delete set null,
+  goal_id     uuid references public.metas(id) on delete set null,
   amount      numeric(14,2) not null check (amount > 0),
   type        text not null default 'manual' check (type in ('emergency', 'automatic', 'manual')),
   date        date not null default current_date,
   created_at  timestamptz not null default now()
 );
 
-comment on table public.savings is 'Movimientos de ahorro; puede o no estar ligado a una meta específica.';
+comment on table public.ahorros is 'Movimientos de ahorro; puede o no estar ligado a una meta específica.';
 
 -- ---------------------------------------------------------------------------
--- investments — portafolios, rendimientos, activos
+-- inversiones — portafolios, rendimientos, activos
 -- ---------------------------------------------------------------------------
-create table public.investments (
+create table public.inversiones (
   id                uuid primary key default gen_random_uuid(),
   user_id           uuid not null references auth.users(id) on delete cascade,
   name              text not null,
@@ -180,12 +181,12 @@ create table public.investments (
   updated_at        timestamptz not null default now()
 );
 
-comment on table public.investments is 'Inversiones del usuario — alimenta la card de Inversiones y Patrimonio.';
+comment on table public.inversiones is 'Inversiones del usuario — alimenta la card de Inversiones y Patrimonio.';
 
 -- ---------------------------------------------------------------------------
--- settings — configuración de app por usuario
+-- configuracion — configuración de app por usuario
 -- ---------------------------------------------------------------------------
-create table public.settings (
+create table public.configuracion (
   user_id                 uuid primary key references auth.users(id) on delete cascade,
   theme                   text not null default 'light' check (theme in ('light', 'dark')),
   currency                text not null default 'COP',
@@ -195,12 +196,12 @@ create table public.settings (
   updated_at              timestamptz not null default now()
 );
 
-comment on table public.settings is 'Configuración de la app por usuario (tema, moneda, idioma, notificaciones).';
+comment on table public.configuracion is 'Configuración de la app por usuario (tema, moneda, idioma, notificaciones).';
 
 -- ---------------------------------------------------------------------------
--- audit_logs — historial de seguridad y transacciones
+-- auditoria — historial de seguridad y transacciones
 -- ---------------------------------------------------------------------------
-create table public.audit_logs (
+create table public.auditoria (
   id          uuid primary key default gen_random_uuid(),
   user_id     uuid not null references auth.users(id) on delete cascade,
   action      text not null,
@@ -210,30 +211,30 @@ create table public.audit_logs (
   created_at  timestamptz not null default now()
 );
 
-comment on table public.audit_logs is 'Historial de auditoría, poblado por triggers en expenses/incomes/debts/goals.';
+comment on table public.auditoria is 'Historial de auditoría, poblado por triggers en gastos/ingresos/deudas/metas.';
 
 -- ============================================================================
 -- 2. ÍNDICES
 -- ============================================================================
 
-create index idx_categories_user_id on public.categories(user_id);
-create index idx_incomes_user_id on public.incomes(user_id);
-create index idx_incomes_user_date on public.incomes(user_id, date);
-create index idx_incomes_category_id on public.incomes(category_id);
-create index idx_expenses_user_id on public.expenses(user_id);
-create index idx_expenses_user_date on public.expenses(user_id, date);
-create index idx_expenses_category_id on public.expenses(category_id);
-create index idx_debts_user_id on public.debts(user_id);
-create index idx_budgets_user_id on public.budgets(user_id);
-create index idx_budgets_user_month on public.budgets(user_id, month);
-create index idx_alerts_user_id on public.alerts(user_id);
-create index idx_alerts_user_unread on public.alerts(user_id, is_read);
-create index idx_goals_user_id on public.goals(user_id);
-create index idx_savings_user_id on public.savings(user_id);
-create index idx_savings_goal_id on public.savings(goal_id);
-create index idx_investments_user_id on public.investments(user_id);
-create index idx_audit_logs_user_id on public.audit_logs(user_id);
-create index idx_audit_logs_user_created on public.audit_logs(user_id, created_at desc);
+create index idx_categorias_user_id on public.categorias(user_id);
+create index idx_ingresos_user_id on public.ingresos(user_id);
+create index idx_ingresos_user_date on public.ingresos(user_id, date);
+create index idx_ingresos_category_id on public.ingresos(category_id);
+create index idx_gastos_user_id on public.gastos(user_id);
+create index idx_gastos_user_date on public.gastos(user_id, date);
+create index idx_gastos_category_id on public.gastos(category_id);
+create index idx_deudas_user_id on public.deudas(user_id);
+create index idx_presupuestos_user_id on public.presupuestos(user_id);
+create index idx_presupuestos_user_month on public.presupuestos(user_id, month);
+create index idx_alertas_user_id on public.alertas(user_id);
+create index idx_alertas_user_unread on public.alertas(user_id, is_read);
+create index idx_metas_user_id on public.metas(user_id);
+create index idx_ahorros_user_id on public.ahorros(user_id);
+create index idx_ahorros_goal_id on public.ahorros(goal_id);
+create index idx_inversiones_user_id on public.inversiones(user_id);
+create index idx_auditoria_user_id on public.auditoria(user_id);
+create index idx_auditoria_user_created on public.auditoria(user_id, created_at desc);
 
 -- ============================================================================
 -- 3. FUNCIONES Y TRIGGERS
@@ -245,6 +246,7 @@ create index idx_audit_logs_user_created on public.audit_logs(user_id, created_a
 create or replace function public.handle_updated_at()
 returns trigger
 language plpgsql
+set search_path = public
 as $$
 begin
   new.updated_at = now();
@@ -252,23 +254,23 @@ begin
 end;
 $$;
 
-create trigger set_updated_at before update on public.profiles
+create trigger set_updated_at before update on public.usuarios
   for each row execute function public.handle_updated_at();
-create trigger set_updated_at before update on public.categories
+create trigger set_updated_at before update on public.categorias
   for each row execute function public.handle_updated_at();
-create trigger set_updated_at before update on public.incomes
+create trigger set_updated_at before update on public.ingresos
   for each row execute function public.handle_updated_at();
-create trigger set_updated_at before update on public.expenses
+create trigger set_updated_at before update on public.gastos
   for each row execute function public.handle_updated_at();
-create trigger set_updated_at before update on public.debts
+create trigger set_updated_at before update on public.deudas
   for each row execute function public.handle_updated_at();
-create trigger set_updated_at before update on public.budgets
+create trigger set_updated_at before update on public.presupuestos
   for each row execute function public.handle_updated_at();
-create trigger set_updated_at before update on public.goals
+create trigger set_updated_at before update on public.metas
   for each row execute function public.handle_updated_at();
-create trigger set_updated_at before update on public.investments
+create trigger set_updated_at before update on public.inversiones
   for each row execute function public.handle_updated_at();
-create trigger set_updated_at before update on public.settings
+create trigger set_updated_at before update on public.configuracion
   for each row execute function public.handle_updated_at();
 
 -- ---------------------------------------------------------------------------
@@ -287,7 +289,7 @@ begin
   v_user_id := coalesce(new.user_id, old.user_id);
   v_entity_id := coalesce(new.id, old.id);
 
-  insert into public.audit_logs (user_id, action, entity, entity_id, metadata)
+  insert into public.auditoria (user_id, action, entity, entity_id, metadata)
   values (
     v_user_id,
     lower(TG_OP),
@@ -303,17 +305,17 @@ begin
 end;
 $$;
 
-create trigger audit_expenses after insert or update or delete on public.expenses
+create trigger audit_gastos after insert or update or delete on public.gastos
   for each row execute function public.log_audit();
-create trigger audit_incomes after insert or update or delete on public.incomes
+create trigger audit_ingresos after insert or update or delete on public.ingresos
   for each row execute function public.log_audit();
-create trigger audit_debts after insert or update or delete on public.debts
+create trigger audit_deudas after insert or update or delete on public.deudas
   for each row execute function public.log_audit();
-create trigger audit_goals after insert or update or delete on public.goals
+create trigger audit_metas after insert or update or delete on public.metas
   for each row execute function public.log_audit();
 
 -- ---------------------------------------------------------------------------
--- 3.3 alta de usuario — perfil, settings y categorías por defecto
+-- 3.3 alta de usuario — perfil, configuración y categorías por defecto
 -- ---------------------------------------------------------------------------
 create or replace function public.handle_new_user()
 returns trigger
@@ -322,16 +324,16 @@ security definer
 set search_path = public
 as $$
 begin
-  insert into public.profiles (id, full_name, avatar_url)
+  insert into public.usuarios (id, full_name, avatar_url)
   values (
     new.id,
     new.raw_user_meta_data ->> 'full_name',
     new.raw_user_meta_data ->> 'avatar_url'
   );
 
-  insert into public.settings (user_id) values (new.id);
+  insert into public.configuracion (user_id) values (new.id);
 
-  insert into public.categories (user_id, name, color, kind, is_default) values
+  insert into public.categorias (user_id, name, color, kind, is_default) values
     (new.id, 'Vivienda',       '#2B2D42', 'expense', true),
     (new.id, 'Servicios',      '#E76F51', 'expense', true),
     (new.id, 'Alimentación',   '#F4A261', 'expense', true),
@@ -354,88 +356,89 @@ create trigger on_auth_user_created
 -- 4. ROW LEVEL SECURITY
 -- ============================================================================
 
-alter table public.profiles     enable row level security;
-alter table public.categories   enable row level security;
-alter table public.incomes      enable row level security;
-alter table public.expenses     enable row level security;
-alter table public.debts        enable row level security;
-alter table public.budgets      enable row level security;
-alter table public.alerts       enable row level security;
-alter table public.goals        enable row level security;
-alter table public.savings      enable row level security;
-alter table public.investments  enable row level security;
-alter table public.settings     enable row level security;
-alter table public.audit_logs   enable row level security;
+alter table public.usuarios       enable row level security;
+alter table public.categorias     enable row level security;
+alter table public.ingresos       enable row level security;
+alter table public.gastos         enable row level security;
+alter table public.deudas         enable row level security;
+alter table public.presupuestos   enable row level security;
+alter table public.alertas        enable row level security;
+alter table public.metas          enable row level security;
+alter table public.ahorros        enable row level security;
+alter table public.inversiones    enable row level security;
+alter table public.configuracion  enable row level security;
+alter table public.auditoria      enable row level security;
 
--- profiles ------------------------------------------------------------------
-create policy "profiles_select_own" on public.profiles for select using (id = auth.uid());
-create policy "profiles_update_own" on public.profiles for update using (id = auth.uid());
+-- usuarios ------------------------------------------------------------------
+create policy "usuarios_select_own" on public.usuarios for select using (id = auth.uid());
+create policy "usuarios_update_own" on public.usuarios for update using (id = auth.uid());
 -- sin insert/delete: la fila la crea handle_new_user() (security definer)
 
--- categories ------------------------------------------------------------------
-create policy "categories_select_own" on public.categories for select using (user_id = auth.uid());
-create policy "categories_insert_own" on public.categories for insert with check (user_id = auth.uid());
-create policy "categories_update_own" on public.categories for update using (user_id = auth.uid());
-create policy "categories_delete_own" on public.categories for delete using (user_id = auth.uid());
+-- categorias ------------------------------------------------------------------
+create policy "categorias_select_own" on public.categorias for select using (user_id = auth.uid());
+create policy "categorias_insert_own" on public.categorias for insert with check (user_id = auth.uid());
+create policy "categorias_update_own" on public.categorias for update using (user_id = auth.uid());
+create policy "categorias_delete_own" on public.categorias for delete using (user_id = auth.uid());
 
--- incomes ------------------------------------------------------------------
-create policy "incomes_select_own" on public.incomes for select using (user_id = auth.uid());
-create policy "incomes_insert_own" on public.incomes for insert with check (user_id = auth.uid());
-create policy "incomes_update_own" on public.incomes for update using (user_id = auth.uid());
-create policy "incomes_delete_own" on public.incomes for delete using (user_id = auth.uid());
+-- ingresos ------------------------------------------------------------------
+create policy "ingresos_select_own" on public.ingresos for select using (user_id = auth.uid());
+create policy "ingresos_insert_own" on public.ingresos for insert with check (user_id = auth.uid());
+create policy "ingresos_update_own" on public.ingresos for update using (user_id = auth.uid());
+create policy "ingresos_delete_own" on public.ingresos for delete using (user_id = auth.uid());
 
--- expenses ------------------------------------------------------------------
-create policy "expenses_select_own" on public.expenses for select using (user_id = auth.uid());
-create policy "expenses_insert_own" on public.expenses for insert with check (user_id = auth.uid());
-create policy "expenses_update_own" on public.expenses for update using (user_id = auth.uid());
-create policy "expenses_delete_own" on public.expenses for delete using (user_id = auth.uid());
+-- gastos ------------------------------------------------------------------
+create policy "gastos_select_own" on public.gastos for select using (user_id = auth.uid());
+create policy "gastos_insert_own" on public.gastos for insert with check (user_id = auth.uid());
+create policy "gastos_update_own" on public.gastos for update using (user_id = auth.uid());
+create policy "gastos_delete_own" on public.gastos for delete using (user_id = auth.uid());
 
--- debts ------------------------------------------------------------------
-create policy "debts_select_own" on public.debts for select using (user_id = auth.uid());
-create policy "debts_insert_own" on public.debts for insert with check (user_id = auth.uid());
-create policy "debts_update_own" on public.debts for update using (user_id = auth.uid());
-create policy "debts_delete_own" on public.debts for delete using (user_id = auth.uid());
+-- deudas ------------------------------------------------------------------
+create policy "deudas_select_own" on public.deudas for select using (user_id = auth.uid());
+create policy "deudas_insert_own" on public.deudas for insert with check (user_id = auth.uid());
+create policy "deudas_update_own" on public.deudas for update using (user_id = auth.uid());
+create policy "deudas_delete_own" on public.deudas for delete using (user_id = auth.uid());
 
--- budgets ------------------------------------------------------------------
-create policy "budgets_select_own" on public.budgets for select using (user_id = auth.uid());
-create policy "budgets_insert_own" on public.budgets for insert with check (user_id = auth.uid());
-create policy "budgets_update_own" on public.budgets for update using (user_id = auth.uid());
-create policy "budgets_delete_own" on public.budgets for delete using (user_id = auth.uid());
+-- presupuestos ------------------------------------------------------------------
+create policy "presupuestos_select_own" on public.presupuestos for select using (user_id = auth.uid());
+create policy "presupuestos_insert_own" on public.presupuestos for insert with check (user_id = auth.uid());
+create policy "presupuestos_update_own" on public.presupuestos for update using (user_id = auth.uid());
+create policy "presupuestos_delete_own" on public.presupuestos for delete using (user_id = auth.uid());
 
--- alerts ------------------------------------------------------------------
-create policy "alerts_select_own" on public.alerts for select using (user_id = auth.uid());
-create policy "alerts_insert_own" on public.alerts for insert with check (user_id = auth.uid());
-create policy "alerts_update_own" on public.alerts for update using (user_id = auth.uid());
-create policy "alerts_delete_own" on public.alerts for delete using (user_id = auth.uid());
+-- alertas ------------------------------------------------------------------
+create policy "alertas_select_own" on public.alertas for select using (user_id = auth.uid());
+create policy "alertas_insert_own" on public.alertas for insert with check (user_id = auth.uid());
+create policy "alertas_update_own" on public.alertas for update using (user_id = auth.uid());
+create policy "alertas_delete_own" on public.alertas for delete using (user_id = auth.uid());
 
--- goals ------------------------------------------------------------------
-create policy "goals_select_own" on public.goals for select using (user_id = auth.uid());
-create policy "goals_insert_own" on public.goals for insert with check (user_id = auth.uid());
-create policy "goals_update_own" on public.goals for update using (user_id = auth.uid());
-create policy "goals_delete_own" on public.goals for delete using (user_id = auth.uid());
+-- metas ------------------------------------------------------------------
+create policy "metas_select_own" on public.metas for select using (user_id = auth.uid());
+create policy "metas_insert_own" on public.metas for insert with check (user_id = auth.uid());
+create policy "metas_update_own" on public.metas for update using (user_id = auth.uid());
+create policy "metas_delete_own" on public.metas for delete using (user_id = auth.uid());
 
--- savings ------------------------------------------------------------------
-create policy "savings_select_own" on public.savings for select using (user_id = auth.uid());
-create policy "savings_insert_own" on public.savings for insert with check (user_id = auth.uid());
-create policy "savings_update_own" on public.savings for update using (user_id = auth.uid());
-create policy "savings_delete_own" on public.savings for delete using (user_id = auth.uid());
+-- ahorros ------------------------------------------------------------------
+create policy "ahorros_select_own" on public.ahorros for select using (user_id = auth.uid());
+create policy "ahorros_insert_own" on public.ahorros for insert with check (user_id = auth.uid());
+create policy "ahorros_update_own" on public.ahorros for update using (user_id = auth.uid());
+create policy "ahorros_delete_own" on public.ahorros for delete using (user_id = auth.uid());
 
--- investments ------------------------------------------------------------------
-create policy "investments_select_own" on public.investments for select using (user_id = auth.uid());
-create policy "investments_insert_own" on public.investments for insert with check (user_id = auth.uid());
-create policy "investments_update_own" on public.investments for update using (user_id = auth.uid());
-create policy "investments_delete_own" on public.investments for delete using (user_id = auth.uid());
+-- inversiones ------------------------------------------------------------------
+create policy "inversiones_select_own" on public.inversiones for select using (user_id = auth.uid());
+create policy "inversiones_insert_own" on public.inversiones for insert with check (user_id = auth.uid());
+create policy "inversiones_update_own" on public.inversiones for update using (user_id = auth.uid());
+create policy "inversiones_delete_own" on public.inversiones for delete using (user_id = auth.uid());
 
--- settings ------------------------------------------------------------------
-create policy "settings_select_own" on public.settings for select using (user_id = auth.uid());
-create policy "settings_update_own" on public.settings for update using (user_id = auth.uid());
+-- configuracion ------------------------------------------------------------------
+create policy "configuracion_select_own" on public.configuracion for select using (user_id = auth.uid());
+create policy "configuracion_update_own" on public.configuracion for update using (user_id = auth.uid());
 -- sin insert/delete: la fila la crea handle_new_user() (security definer)
 
--- audit_logs ------------------------------------------------------------------
+-- auditoria ------------------------------------------------------------------
 -- solo lectura para el dueño; las escrituras las hace log_audit() (security definer)
-create policy "audit_logs_select_own" on public.audit_logs for select using (user_id = auth.uid());
+create policy "auditoria_select_own" on public.auditoria for select using (user_id = auth.uid());
 
 -- ============================================================================
--- Fin del schema — 12 tablas, RLS en todas, triggers de updated_at + audit_log
--- + alta automática de perfil/settings/categorías por defecto al registrarse.
+-- Fin del schema — 12 tablas (nombres en español), RLS en todas, triggers de
+-- updated_at + audit_log + alta automática de usuario/configuración/categorías
+-- por defecto al registrarse.
 -- ============================================================================

@@ -2,12 +2,12 @@ import { createBaseRepository } from "./base.repository.js";
 import { ApiError } from "../utils/ApiError.js";
 
 export const incomesRepository = {
-  ...createBaseRepository("incomes"),
+  ...createBaseRepository("ingresos"),
 
   async listByDateRange(supabase, startDate, endDate) {
     const { data, error } = await supabase
-      .from("incomes")
-      .select("*, categories(id, name, color)")
+      .from("ingresos")
+      .select("*, categorias(id, name, color)")
       .gte("date", startDate)
       .lte("date", endDate)
       .order("date", { ascending: false });

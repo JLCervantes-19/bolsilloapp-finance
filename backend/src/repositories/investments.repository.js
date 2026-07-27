@@ -1,3 +1,3 @@
 import { createBaseRepository } from "./base.repository.js";
 
-export const investmentsRepository = createBaseRepository("investments");
+export const investmentsRepository = createBaseRepository("inversiones");

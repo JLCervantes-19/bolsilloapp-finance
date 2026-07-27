@@ -17,10 +17,10 @@ import { buildRecommendations } from "./engines/recommendationEngine.js";
  */
 async function computeAvailableBalance(supabase) {
   const [{ data: incomes }, { data: expenses }, { data: goals }, { data: investments }] = await Promise.all([
-    supabase.from("incomes").select("amount"),
-    supabase.from("expenses").select("amount"),
-    supabase.from("goals").select("current_amount"),
-    supabase.from("investments").select("amount_invested"),
+    supabase.from("ingresos").select("amount"),
+    supabase.from("gastos").select("amount"),
+    supabase.from("metas").select("current_amount"),
+    supabase.from("inversiones").select("amount_invested"),
   ]);
 
   const totalIncome = (incomes || []).reduce((s, r) => s + Number(r.amount), 0);
@@ -67,8 +67,8 @@ export async function getDashboardSummary(supabase) {
   const categorySum = (rows) => {
     const byCategory = new Map();
     for (const row of rows) {
-      const name = row.categories?.name || "Sin categoría";
-      const color = row.categories?.color || "#787774";
+      const name = row.categorias?.name || "Sin categoría";
+      const color = row.categorias?.color || "#787774";
       const prev = byCategory.get(name) || { name, color, value: 0 };
       prev.value += Number(row.amount);
       byCategory.set(name, prev);

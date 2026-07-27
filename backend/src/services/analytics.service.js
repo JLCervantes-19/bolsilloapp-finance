@@ -42,8 +42,8 @@ export async function getMonthlySeries(supabase, months = 6) {
   const totalSavings = goals.reduce((s, g) => s + Number(g.current_amount), 0);
   const totalInvestments = investments.reduce((s, i) => s + Number(i.current_value), 0);
 
-  const { data: allIncomes } = await supabase.from("incomes").select("amount");
-  const { data: allExpenses } = await supabase.from("expenses").select("amount");
+  const { data: allIncomes } = await supabase.from("ingresos").select("amount");
+  const { data: allExpenses } = await supabase.from("gastos").select("amount");
   const balance =
     (allIncomes || []).reduce((s, r) => s + Number(r.amount), 0) -
     (allExpenses || []).reduce((s, r) => s + Number(r.amount), 0) -

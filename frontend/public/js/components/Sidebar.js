@@ -2,7 +2,7 @@ import { h } from "../utils/dom.js";
 import { Icon } from "./Icon.js";
 
 const LINKS = [
-  { label: "Dashboard", icon: "home", route: "#/dashboard" },
+  { label: "Resumen", icon: "home", route: "#/dashboard" },
   { label: "Gastos", icon: "out", route: "#/gastos" },
   { label: "Deudas", icon: "card", route: "#/deudas" },
   { label: "Ahorros y metas", icon: "piggy", route: "#/ahorros" },
