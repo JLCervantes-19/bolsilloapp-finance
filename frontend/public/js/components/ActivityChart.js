@@ -6,7 +6,11 @@ export function ActivityChart({ values, changePercent, ctaLabel, onCtaClick, onC
   const canvas = h("canvas", { style: "width:100%;height:64px" });
   const up = changePercent >= 0;
 
-  const card = h("div", { class: "activity-chart glass-strong glass-in" }, [
+  // Sin `.glass-in`: los gráficos no llevan animación de entrada ni de
+  // dibujo — solo se anima el conteo de los números en SummaryCard. Chart.js
+  // se crea directo, sin animación propia (`animation: false`), para que no
+  // haya ningún movimiento que se sienta "inestable" al entrar.
+  const card = h("div", { class: "activity-chart glass-strong" }, [
     h("div", { class: "activity-chart__head" }, [
       h("span", { class: "activity-chart__pill" }, [Icon(up ? "up" : "down", { size: 12 }), `${up ? "+" : ""}${changePercent}%`]),
     ]),
@@ -16,8 +20,7 @@ export function ActivityChart({ values, changePercent, ctaLabel, onCtaClick, onC
       : null,
   ]);
 
-  function createChart() {
-    if (!window.Chart) return;
+  if (window.Chart) {
     const chart = new Chart(canvas, {
       type: "line",
       data: {
@@ -42,25 +45,12 @@ export function ActivityChart({ values, changePercent, ctaLabel, onCtaClick, onC
       options: {
         responsive: true,
         maintainAspectRatio: false,
-        animation: { duration: 900, easing: "easeOutCubic" },
+        animation: false,
         plugins: { legend: { display: false }, tooltip: { enabled: false } },
         scales: { x: { display: false }, y: { display: false } },
       },
     });
     onChartCreated?.(chart);
-  }
-
-  // La tarjeta entra con la animación `.glass-in` (sube + escala + blur). Si
-  // Chart.js arranca a dibujar la línea (su propia animación de 900ms) AL
-  // MISMO TIEMPO que el contenedor todavía se está moviendo, las dos
-  // animaciones se pisan y se ve como si el gráfico "saltara" al entrar.
-  // Se espera a que `glassIn` termine (`animationend`) antes de crear el
-  // chart, salvo que el usuario tenga reduced-motion (ahí CSS ya desactiva
-  // la animación de entrada y `animationend` nunca dispararía).
-  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-    requestAnimationFrame(createChart);
-  } else {
-    card.addEventListener("animationend", createChart, { once: true });
   }
 
   return card;

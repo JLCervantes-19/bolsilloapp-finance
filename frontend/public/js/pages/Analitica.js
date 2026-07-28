@@ -11,7 +11,7 @@ function baseOptions(extra = {}) {
   return {
     responsive: true,
     maintainAspectRatio: false,
-    animation: { duration: 700, easing: "easeOutCubic" },
+    animation: false,
     ...extra,
   };
 }
@@ -42,14 +42,14 @@ export async function renderAnalitica(pageEl) {
     pageEl.append(
       PageHeader({ eyebrow: "Últimos 6 meses", title: "Analítica" }),
       h("section", { class: "analytics-grid" }, [
-        h("div", { class: "chart-card glass glass-in", style: "--d:0" }, [h("h3", {}, "Ingresos vs. gastos"), h("p", {}, "Últimos 6 meses"), h("div", { style: "height:280px" }, [barCanvas])]),
-        h("div", { class: "chart-card glass glass-in", style: "--d:60" }, [h("h3", {}, "Fijos vs. variables"), h("p", {}, "Últimos 6 meses"), h("div", { style: "height:280px" }, [stackCanvas])]),
-        h("div", { class: "chart-card glass glass-in", style: "--d:120" }, [
+        h("div", { class: "chart-card glass" }, [h("h3", {}, "Ingresos vs. gastos"), h("p", {}, "Últimos 6 meses"), h("div", { style: "height:280px" }, [barCanvas])]),
+        h("div", { class: "chart-card glass" }, [h("h3", {}, "Fijos vs. variables"), h("p", {}, "Últimos 6 meses"), h("div", { style: "height:280px" }, [stackCanvas])]),
+        h("div", { class: "chart-card glass" }, [
           h("h3", {}, "Gastos por categoría"),
           h("p", {}, monthTitleCase),
           h("div", { style: "height:280px;max-width:260px;margin:0 auto" }, [donutCanvas]),
         ]),
-        h("div", { class: "chart-card glass glass-in", style: "--d:180" }, [h("h3", {}, "Evolución del patrimonio"), h("p", {}, "Últimos 6 meses"), h("div", { style: "height:280px" }, [lineCanvas])]),
+        h("div", { class: "chart-card glass" }, [h("h3", {}, "Evolución del patrimonio"), h("p", {}, "Últimos 6 meses"), h("div", { style: "height:280px" }, [lineCanvas])]),
       ])
     );
 

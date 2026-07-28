@@ -22,11 +22,13 @@ export function renderLogin({ onSuccess }) {
   const switchBtn = h("button", { type: "button", class: "auth-switch" }, "¿No tienes cuenta? Crear una");
   const forgotBtn = h("button", { type: "button", class: "auth-switch" }, "¿Olvidaste tu contraseña?");
   const errorEl = h("p", { class: "auth-error" });
+  const nameLabel = h("p", { class: "field-label", style: "display:none" }, "Nombre");
   const passwordLabel = h("p", { class: "field-label" }, "Contraseña");
 
   passwordField.addEventListener("input", () => passwordRules.update(passwordField.value));
 
   function applyMode() {
+    nameLabel.style.display = mode === "signup" ? "block" : "none";
     nameField.style.display = mode === "signup" ? "block" : "none";
     if (mode !== "signup") nameField.value = ""; // que no quede pegado el nombre si se vuelve a "Crear cuenta"
     passwordRules.el.style.display = mode === "signup" ? "flex" : "none";
@@ -99,7 +101,7 @@ export function renderLogin({ onSuccess }) {
       },
     },
     [
-      h("p", { class: "field-label" }, "Nombre"),
+      nameLabel,
       nameField,
       h("p", { class: "field-label" }, "Correo"),
       emailField,

@@ -35,7 +35,7 @@ function barConfig(labels, income, expense) {
     options: {
       responsive: true,
       maintainAspectRatio: false,
-      animation: { duration: 700, easing: "easeOutCubic" },
+      animation: false,
       plugins: {
         legend: { position: "bottom", labels: chartTheme.legendLabels },
         tooltip: { callbacks: { label: (ctx) => " " + ctx.dataset.label + ": " + fmt(ctx.raw) } },
@@ -59,7 +59,7 @@ function donutConfig(categories) {
       responsive: true,
       maintainAspectRatio: false,
       cutout: "72%",
-      animation: { duration: 700, easing: "easeOutCubic" },
+      animation: false,
       plugins: { legend: { display: false }, tooltip: { callbacks: { label: (ctx) => " " + ctx.label + ": " + fmt(ctx.raw) } } },
     },
   };
@@ -91,7 +91,7 @@ function lineConfig(labels, networth) {
     options: {
       responsive: true,
       maintainAspectRatio: false,
-      animation: { duration: 700, easing: "easeOutCubic" },
+      animation: false,
       plugins: { legend: { display: false }, tooltip: { callbacks: { label: (ctx) => " " + fmt(ctx.raw) } } },
       scales: {
         x: { grid: { display: false }, ticks: { color: chartTheme.tickColor } },
@@ -201,7 +201,7 @@ export async function renderDashboard(pageEl) {
       SectionTitle({ label: "Resumen del mes", meta: "10 indicadores" }),
       h("section", { class: "summary-row no-scrollbar" }, cards),
 
-      h("section", { style: "max-width:420px;margin-top:4px;--d:360", class: "glass-in" }, [
+      h("section", { style: "max-width:420px;margin-top:4px" }, [
         ActivityChart({
           values: series.networth,
           changePercent: netWorthChangePct(series.networth),
@@ -223,12 +223,12 @@ export async function renderDashboard(pageEl) {
 
       SectionTitle({ label: "Análisis" }),
       h("section", { class: "summary-grid" }, [
-        h("div", { class: "chart-card glass glass-in", style: "--d:460" }, [
+        h("div", { class: "chart-card glass" }, [
           h("h3", {}, "Ingresos vs. gastos"),
           h("p", {}, "Últimos 6 meses"),
           h("div", { style: "height:220px" }, [barCanvas]),
         ]),
-        h("div", { class: "chart-card glass glass-in", style: "--d:500" }, [
+        h("div", { class: "chart-card glass" }, [
           h("h3", {}, "Gastos por categoría"),
           h("p", {}, monthTitleCase),
           h("div", { style: "position:relative;max-width:210px;margin:0 auto;height:180px" }, [
@@ -254,7 +254,7 @@ export async function renderDashboard(pageEl) {
               )
           ),
         ]),
-        h("div", { class: "chart-card glass glass-in", style: "grid-column:1 / -1; --d:540" }, [
+        h("div", { class: "chart-card glass", style: "grid-column:1 / -1" }, [
           h("h3", {}, "Evolución del patrimonio"),
           h("p", {}, "Últimos 6 meses"),
           h("div", { style: "height:220px" }, [lineCanvas]),
