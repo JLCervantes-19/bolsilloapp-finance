@@ -3,8 +3,9 @@ import { z } from "zod";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { validateBody } from "../middlewares/validate.middleware.js";
 import { ApiError } from "../utils/ApiError.js";
-import { supabaseAdmin, supabaseAnon as anonClient } from "../config/supabase.js";
+import { supabaseAdmin, supabaseAnon as anonClient, createAuthSessionClient } from "../config/supabase.js";
 import { translateAuthError } from "../utils/authErrors.js";
+import { env } from "../config/env.js";
 
 /**
  * Capa delgada sobre Supabase Auth — el backend no gestiona contraseñas ni
@@ -70,6 +71,41 @@ authRouter.post(
     const { data, error } = await anonClient.auth.refreshSession({ refresh_token: req.body.refresh_token });
     if (error) throw ApiError.unauthorized(translateAuthError(error.message));
     res.json({ data });
+  })
+);
+
+authRouter.post(
+  "/forgot-password",
+  validateBody(z.object({ email: z.string().email("Ingresá un correo válido") })),
+  asyncHandler(async (req, res) => {
+    // Supabase no revela si el correo existe o no (evita enumeración de
+    // usuarios) — siempre respondemos el mismo mensaje genérico, incluso si
+    // `error` viene poblado por un correo inexistente.
+    await anonClient.auth.resetPasswordForEmail(req.body.email, {
+      redirectTo: env.frontendUrl,
+    });
+    res.json({ data: { message: "Si el correo existe, te enviamos un link para restablecer tu contraseña." } });
+  })
+);
+
+authRouter.post(
+  "/reset-password",
+  validateBody(
+    z.object({
+      access_token: z.string().min(1, "Link de recuperación inválido"),
+      refresh_token: z.string().min(1, "Link de recuperación inválido"),
+      password: passwordSchema,
+    })
+  ),
+  asyncHandler(async (req, res) => {
+    const { access_token, refresh_token, password } = req.body;
+    const client = createAuthSessionClient();
+    const { error: sessionError } = await client.auth.setSession({ access_token, refresh_token });
+    if (sessionError) throw ApiError.unauthorized("El link de recuperación expiró o ya se usó — pedí uno nuevo.");
+
+    const { error } = await client.auth.updateUser({ password });
+    if (error) throw ApiError.badRequest(translateAuthError(error.message));
+    res.json({ data: { message: "Contraseña actualizada" } });
   })
 );
 

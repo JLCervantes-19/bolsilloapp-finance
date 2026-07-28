@@ -2,7 +2,7 @@ import { h } from "../utils/dom.js";
 import { Icon } from "./Icon.js";
 
 /** Widget "hero" — única superficie que usa negro sólido + acento naranja, por diseño. */
-export function ActivityChart({ values, changePercent, ctaLabel, onCtaClick }) {
+export function ActivityChart({ values, changePercent, ctaLabel, onCtaClick, onChartCreated }) {
   const canvas = h("canvas", { style: "width:100%;height:64px" });
   const up = changePercent >= 0;
 
@@ -18,7 +18,7 @@ export function ActivityChart({ values, changePercent, ctaLabel, onCtaClick }) {
 
   requestAnimationFrame(() => {
     if (!window.Chart) return;
-    new Chart(canvas, {
+    const chart = new Chart(canvas, {
       type: "line",
       data: {
         labels: values.map((_, i) => i),
@@ -47,6 +47,7 @@ export function ActivityChart({ values, changePercent, ctaLabel, onCtaClick }) {
         scales: { x: { display: false }, y: { display: false } },
       },
     });
+    onChartCreated?.(chart);
   });
 
   return card;

@@ -18,4 +18,8 @@ export const env = {
   supabaseAnonKey: required("SUPABASE_ANON_KEY"),
   supabaseServiceRoleKey: required("SUPABASE_SERVICE_ROLE_KEY"),
   corsOrigins: (process.env.CORS_ORIGIN || "").split(",").map((o) => o.trim()).filter(Boolean),
+  // A dónde manda Supabase el link del correo de "restablecer contraseña".
+  // Cae en el primer origen de CORS_ORIGIN (típicamente el front local o de
+  // producción) si no se define explícitamente.
+  frontendUrl: (process.env.FRONTEND_URL || "").trim() || (process.env.CORS_ORIGIN || "").split(",")[0]?.trim() || "http://localhost:5173",
 };

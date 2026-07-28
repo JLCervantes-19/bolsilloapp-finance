@@ -29,6 +29,20 @@ export const supabaseAnon = createClient(env.supabaseUrl, env.supabaseAnonKey, {
 });
 
 /**
+ * Cliente anon nuevo (no el singleton `supabaseAnon`) para operaciones que
+ * necesitan `auth.setSession(...)` — como confirmar una nueva contraseña con
+ * los tokens del link de recuperación. Si reutilizáramos `supabaseAnon`,
+ * `setSession` pisaría su estado interno y dos requests concurrentes de
+ * distintos usuarios se pisarían la sesión entre sí.
+ */
+export function createAuthSessionClient() {
+  return createClient(env.supabaseUrl, env.supabaseAnonKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
+    realtime: realtimeOptions,
+  });
+}
+
+/**
  * Cliente con la service role key — únicamente para verificar el token de
  * acceso (auth.getUser) durante el login. Nunca se expone al cliente y
  * nunca se usa para leer/escribir datos de negocio (eso siempre pasa por

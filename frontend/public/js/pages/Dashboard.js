@@ -101,6 +101,15 @@ function lineConfig(labels, networth) {
   };
 }
 
+// % de cambio del patrimonio entre el primer y el último punto de la serie
+// real de 6 meses — reemplaza el porcentaje inventado que traía el widget.
+function netWorthChangePct(networth) {
+  const first = networth?.[0] ?? 0;
+  const last = networth?.[networth.length - 1] ?? 0;
+  if (!first) return 0;
+  return Number((((last - first) / Math.abs(first)) * 100).toFixed(2));
+}
+
 /**
  * `renderDashboard` monta UNA sola vez por navegación (lo llama el router) y
  * registra UN solo listener de "bolsillo:refresh". Adentro, `draw()` es la
@@ -193,7 +202,12 @@ export async function renderDashboard(pageEl) {
       h("section", { class: "summary-row no-scrollbar" }, cards),
 
       h("section", { style: "max-width:420px;margin-top:4px;--d:360", class: "glass-in" }, [
-        ActivityChart({ values: [30, 45, 20, 60, 80, 55, 90, 40, 65, 100, 70, 50], changePercent: 3.45, ctaLabel: "Ver salud financiera" }),
+        ActivityChart({
+          values: series.networth,
+          changePercent: netWorthChangePct(series.networth),
+          ctaLabel: "Ver salud financiera",
+          onChartCreated: (chart) => (charts.activity = chart),
+        }),
       ]),
 
       summary.recommendations.length

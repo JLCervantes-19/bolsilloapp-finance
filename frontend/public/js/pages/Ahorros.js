@@ -4,7 +4,6 @@ import { fmt } from "../utils/formatters.js";
 import { PageHeader } from "../components/PageHeader.js";
 import { ProgressBar } from "../components/ProgressBar.js";
 import { Button } from "../components/Button.js";
-import { ActivityChart } from "../components/ActivityChart.js";
 import { createBottomSheet } from "../components/BottomSheet.js";
 import { ContributeForm, NewGoalForm } from "./GoalForms.js";
 
@@ -57,7 +56,6 @@ export async function renderAhorros(pageEl) {
     h("div", { class: "hero-savings glass-strong glass-in" }, [
       h("p", { style: "margin:0 0 4px;font-size:13px;font-weight:700;opacity:0.7" }, "Ahorro acumulado total"),
       totalEl,
-      ActivityChart({ values: [20, 35, 30, 50, 45, 60, 55, 70, 65, 80, 78, 90], changePercent: 6 }),
     ]),
     h("div", { class: "flex items-center justify-between", style: "margin:var(--space-6) 2px var(--space-3)" }, [
       goalsCountEl,

@@ -15,6 +15,7 @@ const KNOWN_ERRORS = [
   [/invalid email/i, "Ese correo no es válido."],
   [/signups? not allowed|disabled/i, "El registro de nuevas cuentas está deshabilitado por ahora."],
   [/refresh token/i, "Tu sesión expiró — iniciá sesión de nuevo."],
+  [/same password|different from the old/i, "La nueva contraseña debe ser distinta a la anterior."],
   [/network|fetch failed/i, "No se pudo conectar con el servidor. Revisá tu conexión."],
 ];
 

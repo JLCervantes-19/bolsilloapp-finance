@@ -9,10 +9,12 @@ import { createBottomSheet } from "./components/BottomSheet.js";
 import { QuickAddForm } from "./pages/QuickAddForm.js";
 import { renderDashboard } from "./pages/Dashboard.js";
 import { renderLogin } from "./pages/Login.js";
+import { renderResetPassword } from "./pages/ResetPassword.js";
 import { renderGastos } from "./pages/Gastos.js";
 import { renderDeudas } from "./pages/Deudas.js";
 import { renderAhorros } from "./pages/Ahorros.js";
 import { renderAnalitica } from "./pages/Analitica.js";
+import { showToast } from "./components/Toast.js";
 
 const root = document.getElementById("app");
 const isDesktop = () => window.matchMedia("(min-width: 1080px)").matches;
@@ -65,6 +67,11 @@ registerRoute("/login", async () => {
   root.appendChild(renderLogin({ onSuccess: () => navigate("/dashboard") }));
 });
 
+registerRoute("/reset-password", async () => {
+  clear(root);
+  root.appendChild(renderResetPassword({ onSuccess: () => navigate("/login") }));
+});
+
 registerRoute("/dashboard", guardedRoute(renderDashboard));
 registerRoute("/gastos", guardedRoute(renderGastos));
 registerRoute("/deudas", guardedRoute(renderDeudas));
@@ -73,12 +80,26 @@ registerRoute("/analitica", guardedRoute(renderAnalitica));
 
 registerRoute("/not-found", async () => navigate("/dashboard"));
 
+// Re-render del shell (sidebar <-> bottom-nav) SOLO al cruzar el breakpoint
+// desktop/mobile real — nunca en cualquier resize. En Safari iOS, hacer
+// scroll cambia la altura del viewport (la barra de URL se esconde/muestra)
+// y eso dispara "resize" todo el tiempo; sin este guard, la página entera
+// se reconstruía (refetch + replay de todas las animaciones de entrada) en
+// cada scroll, lo que se sentía como que la app "se actualizaba sola".
+let lastIsDesktop = isDesktop();
 window.addEventListener("resize", () => {
-  // re-render del shell (sidebar <-> bottom-nav) al cruzar el breakpoint
-  const evt = new Event("hashchange");
   clearTimeout(window.__resizeT);
-  window.__resizeT = setTimeout(() => window.dispatchEvent(evt), 150);
+  window.__resizeT = setTimeout(() => {
+    const nowDesktop = isDesktop();
+    if (nowDesktop === lastIsDesktop) return;
+    lastIsDesktop = nowDesktop;
+    window.dispatchEvent(new Event("hashchange"));
+  }, 150);
 });
 
-authService.restoreSession();
+const authRedirect = authService.handleAuthRedirect();
+if (!authRedirect.handled) authService.restoreSession();
 startRouter();
+if (authRedirect.handled && authRedirect.type !== "recovery") {
+  showToast("¡Correo confirmado! Ya iniciaste sesión.");
+}

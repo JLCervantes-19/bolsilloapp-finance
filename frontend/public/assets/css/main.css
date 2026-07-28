@@ -668,15 +668,10 @@
 }
 
 /* ============================================================
-   ActivityChart — único widget "hero" en negro sólido + acento naranja.
-   Superficie fija oscura (igual rol que el mapa "Live" de la referencia):
-   se sobreescriben los tokens de texto localmente para que no hereden el
-   navy oscuro del tema claro global.
+   ActivityChart — widget "hero", superficie Liquid Glass translúcida
+   (antes negro sólido) con acento naranja para la línea y el pill.
    ============================================================ */
 .activity-chart {
-  --text-primary: var(--text-on-dark-primary);
-  --text-secondary: var(--text-on-dark-secondary);
-  background: #0b0c12;
   border-radius: var(--radius-xl);
   padding: var(--space-5);
 }
