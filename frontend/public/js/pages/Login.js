@@ -26,7 +26,10 @@ export function renderLogin({ onSuccess }) {
 
   function applyMode() {
     nameField.style.display = mode === "signup" ? "block" : "none";
+    if (mode === "login") nameField.value = ""; // que no quede pegado el nombre si se vuelve a "Crear cuenta"
     passwordRules.el.style.display = mode === "signup" ? "flex" : "none";
+    passwordField.value = "";
+    passwordRules.update("");
     passwordField.autocomplete = mode === "signup" ? "new-password" : "current-password";
     submitBtn.querySelector(".btn__label").textContent = mode === "signup" ? "Crear cuenta" : "Entrar";
     switchBtn.textContent = mode === "signup" ? "¿Ya tienes cuenta? Entrar" : "¿No tienes cuenta? Crear una";

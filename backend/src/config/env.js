@@ -1,7 +1,12 @@
 import "dotenv/config";
 
 function required(name) {
-  const value = process.env[name];
+  // .trim() a propósito: pegar una env var en el dashboard de Vercel deja
+  // fácilmente un espacio o salto de línea de más al final, y eso alcanza
+  // para que `new URL(...)` (dentro de supabase-js) tire "The string did
+  // not match the expected pattern" y tumbe la función entera al arrancar
+  // — antes de que el manejo de errores de Express llegue a intervenir.
+  const value = process.env[name]?.trim();
   if (!value) throw new Error(`Falta la variable de entorno ${name}`);
   return value;
 }
