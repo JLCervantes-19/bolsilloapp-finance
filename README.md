@@ -7,29 +7,43 @@ diseño "Liquid Glass".
 ## Estructura
 
 ```
-backend/             — API Express (fuente de verdad; corre standalone en local)
-frontend/             — raíz del proyecto de Vercel
-  api/index.js         — entrypoint serverless (envuelve ../../backend/src/app.js)
-  public/               — SPA estática (Tailwind v4 + Vanilla JS ES Modules)
-  package.json          — deps de Tailwind + las mismas deps runtime de backend/package.json
-                           (Vercel resuelve node_modules de la función api/ desde el
-                           package.json más cercano — por eso están duplicadas acá)
-  vercel.json            — build del frontend + rewrite de /api/* a la función serverless
-schema_supabase.txt  — schema SQL completo (12 tablas + RLS), ya aplicado al proyecto Supabase
+frontend/
+  server/               — API Express (Clean Architecture) — antes vivía en /backend,
+                           ahora adentro de frontend/ a propósito (ver nota abajo)
+  api/index.js           — entrypoint serverless de Vercel (envuelve ../server/src/app.js)
+  public/                 — SPA estática (Tailwind v4 + Vanilla JS ES Modules)
+  package.json            — deps de Tailwind + las mismas deps runtime de server/package.json
+  vercel.json             — no está acá, vive en la raíz del repo (ver abajo)
+vercel.json           — builds/routes explícito: frontend/public como estático,
+                         frontend/api/index.js como función serverless
+schema_supabase.txt   — schema SQL completo (12 tablas + RLS), ya aplicado al proyecto Supabase
 ```
 
-**Por qué `frontend/` es la raíz de Vercel y no el repo entero:** el proyecto
-de Vercel quedó creado con el *Root Directory* apuntando a `frontend/` (no se
-pudo cambiar de forma persistente desde el dashboard). En vez de pelear con
-esa configuración, el repo se acomodó a ella — `api/` y `vercel.json` viven
-adentro de `frontend/`, así que sea cual sea el Root Directory real, coincide
-con la estructura del repo.
+**Por qué el backend vive adentro de `frontend/server/` y no en un `/backend`
+suelto:** Node resuelve `node_modules` subiendo por los directorios padre
+del archivo que hace el `import`, y en Vercel solo se instala
+`frontend/node_modules` (para la función `frontend/api/index.js`). Un
+`backend/` fuera del árbol de `frontend/` nunca puede resolver sus propias
+dependencias (`express`, `@supabase/supabase-js`, etc.) en producción —
+localmente parecía funcionar porque `backend/node_modules` existía ahí
+suelto de instalarlo a mano, pero en Vercel (que solo corre `npm install`
+adentro de `frontend/`) tronaba en tiempo de ejecución con
+`Cannot find package 'express'`. Server adentro de `frontend/` resuelve
+esto de raíz: cualquier archivo bajo `frontend/` encuentra
+`frontend/node_modules` subiendo por sus directorios padre.
+
+**Por qué `vercel.json` usa el formato clásico `builds`/`routes` en vez de
+`buildCommand`/`outputDirectory`:** el proyecto de Vercel llegó a tener un
+Build Command explícito pegado en el dashboard (de una configuración
+anterior) que le ganaba a cualquier cambio en `vercel.json` — el formato
+`builds` es la única forma de que el propio `vercel.json` sea la fuente de
+verdad completa, sin depender de nada configurado a mano en el dashboard.
 
 ## Desarrollo local
 
 ```bash
 # Backend (puerto 3001)
-cd backend
+cd frontend/server
 cp .env.example .env   # completar SUPABASE_ANON_KEY y SUPABASE_SERVICE_ROLE_KEY
 npm install
 npm run dev
@@ -43,15 +57,20 @@ npm run serve
 
 ## Despliegue en Vercel
 
-Un solo proyecto de Vercel sirve **frontend + backend**, con Root Directory
-= `frontend`:
+Un solo proyecto de Vercel sirve **frontend + backend** — `vercel.json` en
+la raíz del repo define todo explícitamente:
 
-- `outputDirectory` (`public`, relativo a `frontend/`) se sirve como sitio estático.
-- `frontend/api/index.js` se despliega como función serverless — Vercel
-  enruta todo `/api/*` ahí (ver `frontend/vercel.json`), así que el frontend
-  llama a `/api/...` en el mismo origen
-  (`frontend/public/js/services/config.js` ya lo asume: en `localhost` usa
-  `http://localhost:3001/api`, en cualquier otro host usa `/api` same-origin).
+- `frontend/public/**` se despliega como sitio estático.
+- `frontend/api/index.js` se despliega como función serverless (Node) —
+  Vercel enruta todo `/api/*` ahí, así que el frontend llama a `/api/...`
+  en el mismo origen (`frontend/public/js/services/config.js` ya lo asume:
+  en `localhost` usa `http://localhost:3001/api`, en cualquier otro host
+  usa `/api` same-origin).
+
+Si el proyecto de Vercel se recrea desde cero, en la pantalla de
+configuración previa al primer deploy conviene dejar **Root Directory
+vacío** y no tocar Build/Install/Output Command — con `builds`/`routes` en
+`vercel.json`, esos campos no se usan para nada.
 
 ### Variables de entorno a configurar en el dashboard de Vercel
 
@@ -62,12 +81,14 @@ Un solo proyecto de Vercel sirve **frontend + backend**, con Root Directory
 | `SUPABASE_URL` | `https://tsjzybxgaeltxhnkqpry.supabase.co` |
 | `SUPABASE_ANON_KEY` | anon key del proyecto `bolsillo-app` en Supabase |
 | `SUPABASE_SERVICE_ROLE_KEY` | service role key del proyecto (¡secreta!) |
-| `CORS_ORIGIN` | el dominio de producción de Vercel — opcional, dejar vacío no rompe nada porque frontend y backend quedan same-origin (ver conversación); el CORS del backend es fail-closed sin este valor. |
+| `CORS_ORIGIN` | el dominio de producción de Vercel — opcional, dejar vacío no rompe nada porque frontend y backend quedan same-origin; el CORS del backend es fail-closed sin este valor. |
 | `NODE_ENV` | `production` |
 
 Sin `SUPABASE_SERVICE_ROLE_KEY` configurada, la función serverless falla al
 arrancar (`env.js` valida las variables requeridas de forma explícita —
-fail-fast intencional, no un bug).
+fail-fast intencional, no un bug). Ojo al pegar los valores: un espacio o
+salto de línea de más alcanza para tumbar la función entera al arrancar
+(`env.js` los recorta con `.trim()` como defensa, pero mejor pegarlos limpios).
 
 ### Qué no se subió al repo (y por qué)
 
