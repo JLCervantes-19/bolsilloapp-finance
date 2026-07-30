@@ -6,6 +6,9 @@ import { showToast } from "../components/Toast.js";
 import { financialService } from "../services/financialService.js";
 import { fmt, todayISO } from "../utils/formatters.js";
 
+const MAX_CUSTOM_CATEGORIES = 3;
+const CATEGORY_COLORS = ["#ff9466", "#2A9D8F", "#E76F51", "#4a4fd0", "#81B29A", "#c98a1c"];
+
 /**
  * Contenido del bottom sheet "Agregar gasto/ingreso rápido" — port del
  * flujo submitSheet() del prototipo, incluida la asignación automática a
@@ -18,15 +21,21 @@ export function QuickAddForm({ categories, onDone }) {
     amount: "",
     allocFund: true,
     allocInvest: true,
+    creatingCategory: false,
+    newCategoryName: "",
+    newCategoryColor: CATEGORY_COLORS[0],
   };
 
   const modeRow = h("section", { class: "flex gap-2 mb-4" });
   const categoryLabel = h("p", { class: "field-label" }, "Categoría");
   const categoryRow = h("div", { class: "flex flex-wrap gap-2 mb-4" });
+  const newCategoryPanel = h("div", { class: "mb-4" });
   const amountLabel = h("p", { class: "field-label" }, "Monto");
   const amountField = AmountField({ onChange: (v) => (state.amount = v) });
   const allocSection = h("div", { class: "mb-5" });
   const submitBtn = Button({ label: "Agregar gasto", fullWidth: true, type: "submit" });
+
+  const customCategoryCount = () => categories.filter((c) => !c.is_default).length;
 
   function renderModeRow() {
     clear(modeRow);
@@ -42,6 +51,91 @@ export function QuickAddForm({ categories, onDone }) {
     categoryRow.append(
       ...list.map((c) => Chip({ label: c.name, color: c.color, pressed: c.id === state.categoryId, onClick: () => (state.categoryId = c.id, renderCategoryRow()) }))
     );
+    if (!state.creatingCategory && customCategoryCount() < MAX_CUSTOM_CATEGORIES) {
+      categoryRow.append(
+        Chip({
+          label: "+ Nueva",
+          color: "var(--brand-accent)",
+          pressed: false,
+          onClick: () => {
+            state.creatingCategory = true;
+            state.newCategoryName = "";
+            state.newCategoryColor = CATEGORY_COLORS[0];
+            renderCategoryRow();
+            renderNewCategoryPanel();
+          },
+        })
+      );
+    }
+  }
+
+  function renderNewCategoryPanel() {
+    clear(newCategoryPanel);
+    if (!state.creatingCategory) return;
+
+    const nameInput = h("input", {
+      type: "text",
+      placeholder: "Nombre de la nueva categoría",
+      class: "amount-field glass",
+      style: "font-size:15px;padding:10px 14px;height:auto;width:100%",
+      value: state.newCategoryName,
+      onInput: (e) => (state.newCategoryName = e.target.value),
+    });
+
+    const swatches = h(
+      "div",
+      { class: "flex gap-2", style: "margin:10px 0" },
+      CATEGORY_COLORS.map((color) =>
+        h("button", {
+          type: "button",
+          "aria-label": `Color ${color}`,
+          style: `width:24px;height:24px;border-radius:50%;background:${color};cursor:pointer;border:2px solid ${
+            color === state.newCategoryColor ? "var(--text-primary)" : "transparent"
+          }`,
+          onClick: () => {
+            state.newCategoryColor = color;
+            renderNewCategoryPanel();
+          },
+        })
+      )
+    );
+
+    const saveBtn = Button({
+      label: "Guardar categoría",
+      variant: "secondary",
+      onClick: async () => {
+        const name = state.newCategoryName.trim();
+        if (!name) {
+          shakeField(nameInput);
+          return;
+        }
+        setButtonState(saveBtn, "loading");
+        try {
+          const created = await financialService.createCategory({ name, color: state.newCategoryColor, kind: state.mode });
+          categories.push(created);
+          state.categoryId = created.id;
+          state.creatingCategory = false;
+          renderCategoryRow();
+          renderNewCategoryPanel();
+          showToast(`Categoría "${created.name}" creada`);
+        } catch (err) {
+          setButtonState(saveBtn, null);
+          showToast(err.message || "No se pudo crear la categoría");
+        }
+      },
+    });
+
+    const cancelBtn = Button({
+      label: "Cancelar",
+      variant: "ghost",
+      onClick: () => {
+        state.creatingCategory = false;
+        renderCategoryRow();
+        renderNewCategoryPanel();
+      },
+    });
+
+    newCategoryPanel.append(nameInput, swatches, h("div", { class: "flex gap-2" }, [saveBtn, cancelBtn]));
   }
 
   function renderAlloc() {
@@ -69,9 +163,11 @@ export function QuickAddForm({ categories, onDone }) {
   function setMode(mode) {
     state.mode = mode;
     state.categoryId = categories.find((c) => c.kind === mode)?.id || null;
+    state.creatingCategory = false;
     submitBtn.querySelector(".btn__label").textContent = mode === "income" ? "Agregar ingreso" : "Agregar gasto";
     renderModeRow();
     renderCategoryRow();
+    renderNewCategoryPanel();
     renderAlloc();
   }
 
@@ -109,11 +205,12 @@ export function QuickAddForm({ categories, onDone }) {
         }
       },
     },
-    [modeRow, categoryLabel, categoryRow, amountLabel, amountField, allocSection, submitBtn]
+    [modeRow, categoryLabel, categoryRow, newCategoryPanel, amountLabel, amountField, allocSection, submitBtn]
   );
 
   renderModeRow();
   renderCategoryRow();
+  renderNewCategoryPanel();
   renderAlloc();
 
   return form;

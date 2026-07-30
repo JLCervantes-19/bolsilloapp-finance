@@ -5,6 +5,7 @@ export const financialService = {
   getMonthlySeries: (months = 6) => api.get(`/analytics/monthly?months=${months}`),
 
   listCategories: () => api.get("/categories"),
+  createCategory: (payload) => api.post("/categories", payload),
 
   listExpenses: (params = "") => api.get(`/expenses${params}`),
   quickExpense: (payload) => api.post("/transactions/quick-expense", payload),
