@@ -139,6 +139,13 @@ export async function renderDashboard(pageEl) {
       return;
     }
 
+    // Destruye los charts del render anterior ANTES de crear los nuevos.
+    // `ActivityChart` crea su instancia de Chart.js dentro del `pageEl.append`
+    // de abajo (vía `onChartCreated`), así que si esto se llamara después de
+    // ese append (como estaba antes), destruiría el gráfico recién creado en
+    // el mismo `draw()` — por eso el sparkline nunca se veía.
+    destroyCharts();
+
     const currentValues = {
       balance: summary.balance,
       monthlyIncome: summary.monthlyIncome,
@@ -262,7 +269,6 @@ export async function renderDashboard(pageEl) {
       ])
     );
 
-    destroyCharts();
     if (window.Chart) {
       Chart.defaults.font.family = "'Plus Jakarta Sans', sans-serif";
       charts.bar = new Chart(barCanvas, barConfig(series.labels, series.income, series.expense));
