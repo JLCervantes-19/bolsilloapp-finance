@@ -1,7 +1,9 @@
 import { h } from "../utils/dom.js";
 import { Button, setButtonState } from "../components/Button.js";
 import { showToast } from "../components/Toast.js";
+import { confirmAction } from "../components/Confirm.js";
 import { financialService } from "../services/financialService.js";
+import { fmt } from "../utils/formatters.js";
 
 export function DebtForm({ debt, onDone }) {
   const nameField = h("input", { type: "text", class: "text-field", placeholder: "Ej. Tarjeta de crédito", value: debt?.name || "" });
@@ -24,6 +26,12 @@ export function DebtForm({ debt, onDone }) {
           interest_rate: parseFloat(rateField.value) || 0,
           minimum_payment: parseFloat(minField.value) || 0,
         };
+        const ok = await confirmAction({
+          title: debt ? "¿Guardar cambios de la deuda?" : "¿Agregar esta deuda?",
+          message: `${name} · saldo ${fmt(balance)}`,
+          confirmLabel: "Guardar",
+        });
+        if (!ok) return;
         setButtonState(submitBtn, "loading");
         try {
           if (debt) await financialService.updateDebt(debt.id, payload);

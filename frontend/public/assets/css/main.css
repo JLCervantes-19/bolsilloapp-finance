@@ -568,6 +568,46 @@
 }
 
 /* ============================================================
+   Confirm — diálogo genérico "¿Estás seguro?" antes de escribir/borrar
+   ============================================================ */
+.confirm-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 95;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-5);
+  background: rgba(0, 0, 0, 0.001);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--duration-base) var(--ease-out), background var(--duration-base) var(--ease-out);
+}
+.confirm-overlay--open {
+  opacity: 1;
+  pointer-events: auto;
+  background: rgba(0, 0, 0, 0.5);
+}
+.confirm-card {
+  width: 100%;
+  max-width: 340px;
+  border-radius: var(--radius-lg);
+  padding: var(--space-5);
+}
+.confirm-card__title {
+  font: var(--fw-extrabold) var(--fs-lg) / var(--lh-tight) var(--font-primary);
+  margin: 0 0 6px;
+  color: var(--text-primary);
+}
+.confirm-card__message {
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-medium);
+  line-height: var(--lh-base);
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+/* ============================================================
    Nav — mobile bottom-nav (N5 floating pill) + FAB
    ============================================================ */
 .bottom-nav-wrap {

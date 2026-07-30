@@ -1,6 +1,7 @@
 import { h, clear } from "../utils/dom.js";
 import { financialService } from "../services/financialService.js";
-import { fmt } from "../utils/formatters.js";
+import { store } from "../store/store.js";
+import { fmt, firstName } from "../utils/formatters.js";
 import { SummaryCard } from "../components/SummaryCard.js";
 import { ChangeIndicator } from "../components/ChangeIndicator.js";
 import { ProgressBar } from "../components/ProgressBar.js";
@@ -17,9 +18,9 @@ const monthTitleCase = monthLabel.charAt(0).toUpperCase() + monthLabel.slice(1);
 
 function greeting() {
   const h = new Date().getHours();
-  if (h < 12) return "Hola, buenos días";
-  if (h < 19) return "Hola, buenas tardes";
-  return "Hola, buenas noches";
+  const base = h < 12 ? "Hola, buenos días" : h < 19 ? "Hola, buenas tardes" : "Hola, buenas noches";
+  const name = firstName(store.state.session?.user?.user_metadata?.full_name);
+  return name ? `${base}, ${name}` : base;
 }
 
 function barConfig(labels, income, expense) {

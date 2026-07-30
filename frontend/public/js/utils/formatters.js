@@ -21,3 +21,7 @@ export function fmtPct(n, digits = 0) {
 export function todayISO() {
   return new Date().toISOString().slice(0, 10);
 }
+
+export function firstName(fullName) {
+  return fullName?.trim().split(/\s+/)[0] || "";
+}

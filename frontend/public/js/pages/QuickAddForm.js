@@ -3,6 +3,7 @@ import { Chip } from "../components/Chip.js";
 import { AmountField, shakeField } from "../components/AmountField.js";
 import { Button, setButtonState } from "../components/Button.js";
 import { showToast } from "../components/Toast.js";
+import { confirmAction } from "../components/Confirm.js";
 import { financialService } from "../services/financialService.js";
 import { fmt, todayISO } from "../utils/formatters.js";
 
@@ -66,9 +67,12 @@ export function QuickAddForm({ categories, onDone }) {
               style:
                 "width:20px;height:20px;border-radius:50%;border:none;background:var(--surface-2,rgba(0,0,0,0.06));color:var(--text-tertiary);font-size:13px;line-height:1;cursor:pointer",
               onClick: async () => {
-                const ok = window.confirm(
-                  `¿Eliminar la categoría "${c.name}"? Los movimientos ya registrados con ella no se borrarán, solo dejará de poder usarse.`
-                );
+                const ok = await confirmAction({
+                  title: `¿Eliminar "${c.name}"?`,
+                  message: "Los movimientos ya registrados con esta categoría no se borrarán, solo dejará de poder usarse en nuevos movimientos.",
+                  confirmLabel: "Eliminar",
+                  danger: true,
+                });
                 if (!ok) return;
                 try {
                   await financialService.deleteCategory(c.id);
@@ -147,6 +151,12 @@ export function QuickAddForm({ categories, onDone }) {
           shakeField(nameInput);
           return;
         }
+        const ok = await confirmAction({
+          title: "¿Crear esta categoría?",
+          message: `"${name}" quedará disponible para clasificar tus ${state.mode === "expense" ? "gastos" : "ingresos"}.`,
+          confirmLabel: "Crear",
+        });
+        if (!ok) return;
         setButtonState(saveBtn, "loading");
         try {
           const created = await financialService.createCategory({ name, color: state.newCategoryColor, kind: state.mode });
@@ -219,6 +229,13 @@ export function QuickAddForm({ categories, onDone }) {
           shakeField(amountField);
           return;
         }
+        const categoryName = categories.find((c) => c.id === state.categoryId)?.name;
+        const ok = await confirmAction({
+          title: state.mode === "expense" ? "¿Agregar este gasto?" : "¿Agregar este ingreso?",
+          message: `${fmt(amount)}${categoryName ? " · " + categoryName : ""}`,
+          confirmLabel: "Agregar",
+        });
+        if (!ok) return;
         setButtonState(submitBtn, "loading");
         try {
           if (state.mode === "expense") {

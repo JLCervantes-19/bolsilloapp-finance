@@ -3,6 +3,7 @@ import { AmountField, shakeField } from "../components/AmountField.js";
 import { Chip } from "../components/Chip.js";
 import { Button, setButtonState } from "../components/Button.js";
 import { showToast } from "../components/Toast.js";
+import { confirmAction } from "../components/Confirm.js";
 import { financialService } from "../services/financialService.js";
 import { fmt } from "../utils/formatters.js";
 import { api } from "../services/api.js";
@@ -19,6 +20,8 @@ export function ContributeForm({ goal, availableBalance, onDone }) {
         e.preventDefault();
         const n = parseFloat(amount);
         if (!n || n <= 0) return shakeField(field);
+        const ok = await confirmAction({ title: "¿Confirmar abono?", message: `${fmt(n)} a "${goal.name}"`, confirmLabel: "Abonar" });
+        if (!ok) return;
         setButtonState(submitBtn, "loading");
         try {
           await financialService.contributeToGoal(goal.id, n);
@@ -67,6 +70,8 @@ export function NewGoalForm({ onDone }) {
         const name = nameField.value.trim();
         const target = parseFloat(targetField.value);
         if (!name || !target || target <= 0) return;
+        const ok = await confirmAction({ title: "¿Crear esta meta?", message: `${name} · objetivo ${fmt(target)}`, confirmLabel: "Crear" });
+        if (!ok) return;
         setButtonState(submitBtn, "loading");
         try {
           await api.post("/goals", {

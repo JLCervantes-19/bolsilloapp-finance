@@ -6,6 +6,7 @@ import { SectionTitle } from "../components/SectionTitle.js";
 import { Chip } from "../components/Chip.js";
 import { Button } from "../components/Button.js";
 import { showToast } from "../components/Toast.js";
+import { confirmAction } from "../components/Confirm.js";
 import { createBottomSheet } from "../components/BottomSheet.js";
 import { DebtForm } from "./DebtForm.js";
 
@@ -119,6 +120,13 @@ export async function renderDeudas(pageEl) {
           h("span", {
             style: "cursor:pointer;color:var(--negative);font-size:12px;font-weight:700;padding:6px 8px",
             onClick: async () => {
+              const ok = await confirmAction({
+                title: `¿Eliminar "${d.name}"?`,
+                message: "Esta deuda se borrará por completo del plan de pago.",
+                confirmLabel: "Eliminar",
+                danger: true,
+              });
+              if (!ok) return;
               await financialService.deleteDebt(d.id);
               showToast("Deuda eliminada");
               refreshAll();
