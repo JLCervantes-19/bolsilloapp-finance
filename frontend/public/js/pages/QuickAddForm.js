@@ -49,7 +49,45 @@ export function QuickAddForm({ categories, onDone }) {
     clear(categoryRow);
     const list = categories.filter((c) => c.kind === state.mode);
     categoryRow.append(
-      ...list.map((c) => Chip({ label: c.name, color: c.color, pressed: c.id === state.categoryId, onClick: () => (state.categoryId = c.id, renderCategoryRow()) }))
+      ...list.map((c) => {
+        const chip = Chip({ label: c.name, color: c.color, pressed: c.id === state.categoryId, onClick: () => (state.categoryId = c.id, renderCategoryRow()) });
+        if (c.is_default) return chip;
+
+        // Categoría personalizada: se puede borrar. El botón va aparte del
+        // Chip (no adentro) para no interferir con su onClick de selección.
+        return h("div", { class: "flex items-center gap-1" }, [
+          chip,
+          h(
+            "button",
+            {
+              type: "button",
+              "aria-label": `Eliminar categoría ${c.name}`,
+              title: "Eliminar categoría",
+              style:
+                "width:20px;height:20px;border-radius:50%;border:none;background:var(--surface-2,rgba(0,0,0,0.06));color:var(--text-tertiary);font-size:13px;line-height:1;cursor:pointer",
+              onClick: async () => {
+                const ok = window.confirm(
+                  `¿Eliminar la categoría "${c.name}"? Los movimientos ya registrados con ella no se borrarán, solo dejará de poder usarse.`
+                );
+                if (!ok) return;
+                try {
+                  await financialService.deleteCategory(c.id);
+                  const idx = categories.findIndex((cat) => cat.id === c.id);
+                  if (idx !== -1) categories.splice(idx, 1);
+                  if (state.categoryId === c.id) {
+                    state.categoryId = categories.find((cat) => cat.kind === state.mode)?.id || null;
+                  }
+                  renderCategoryRow();
+                  showToast(`Categoría "${c.name}" eliminada`);
+                } catch (err) {
+                  showToast(err.message || "No se pudo eliminar la categoría");
+                }
+              },
+            },
+            "×"
+          ),
+        ]);
+      })
     );
     if (!state.creatingCategory && customCategoryCount() < MAX_CUSTOM_CATEGORIES) {
       categoryRow.append(

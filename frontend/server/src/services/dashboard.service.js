@@ -1,4 +1,3 @@
-import { categoriesRepository } from "../repositories/categories.repository.js";
 import { debtsRepository } from "../repositories/debts.repository.js";
 import { goalsRepository } from "../repositories/goals.repository.js";
 import { investmentsRepository } from "../repositories/investments.repository.js";
@@ -43,7 +42,6 @@ export async function getDashboardSummary(supabase) {
     debts,
     goals,
     investments,
-    expenseCategories,
     currentExpenses,
     previousExpenses,
   ] = await Promise.all([
@@ -54,7 +52,6 @@ export async function getDashboardSummary(supabase) {
     debtsRepository.list(supabase, { filters: { status: "active" } }),
     goalsRepository.list(supabase),
     investmentsRepository.list(supabase),
-    categoriesRepository.listByKind(supabase, "expense"),
     expensesRepository.listByDateRange(supabase, currentRange.start, currentRange.end),
     expensesRepository.listByDateRange(supabase, previousRange.start, previousRange.end),
   ]);
@@ -76,10 +73,11 @@ export async function getDashboardSummary(supabase) {
     return [...byCategory.values()];
   };
 
-  const categoryLegend = expenseCategories.map((c) => {
-    const spent = currentExpenses.filter((e) => e.category_id === c.id).reduce((s, e) => s + Number(e.amount), 0);
-    return { id: c.id, name: c.name, color: c.color, value: spent };
-  });
+  // Se arma desde `currentExpenses` (no desde `expenseCategories`) para que
+  // un gasto clasificado con una categoría ya eliminada por el usuario siga
+  // sumando en el resumen del mes — el borrado de categoría es lógico, ver
+  // categories.repository.js.
+  const categoryLegend = categorySum(currentExpenses).sort((a, b) => b.value - a.value);
 
   const netWorth = computeNetWorth({ balance, totalSavings, totalInvestments, totalDebts });
   const health = computeHealthScore({

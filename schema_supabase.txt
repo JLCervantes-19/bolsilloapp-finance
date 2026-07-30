@@ -38,11 +38,13 @@ create table public.categorias (
   color       text not null,
   kind        text not null check (kind in ('income', 'expense')),
   is_default  boolean not null default false,
+  deleted_at  timestamptz,
   created_at  timestamptz not null default now(),
   updated_at  timestamptz not null default now()
 );
 
 comment on table public.categorias is 'Categorías de ingreso/gasto por usuario, sembradas por defecto al registrarse.';
+comment on column public.categorias.deleted_at is 'Borrado lógico: al eliminar una categoría se marca aquí en vez de borrar la fila, así ingresos/gastos ya clasificados con ella conservan el nombre/color. Una categoría con deleted_at no aparece en listados/selección y su nombre no se puede reutilizar.';
 
 -- ---------------------------------------------------------------------------
 -- ingresos — ingresos fijos, variables, recurrentes
@@ -218,6 +220,7 @@ comment on table public.auditoria is 'Historial de auditoría, poblado por trigg
 -- ============================================================================
 
 create index idx_categorias_user_id on public.categorias(user_id);
+create index idx_categorias_user_active on public.categorias(user_id) where deleted_at is null;
 create index idx_ingresos_user_id on public.ingresos(user_id);
 create index idx_ingresos_user_date on public.ingresos(user_id, date);
 create index idx_ingresos_category_id on public.ingresos(category_id);
