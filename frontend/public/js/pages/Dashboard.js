@@ -8,7 +8,6 @@ import { ProgressBar } from "../components/ProgressBar.js";
 import { Gauge } from "../components/Gauge.js";
 import { SectionTitle } from "../components/SectionTitle.js";
 import { InsightBanner } from "../components/InsightBanner.js";
-import { ActivityChart } from "../components/ActivityChart.js";
 import { PageHeader } from "../components/PageHeader.js";
 import { chartTheme } from "../utils/chartTheme.js";
 import { DashboardSkeleton } from "../components/DashboardSkeleton.js";
@@ -102,15 +101,6 @@ function lineConfig(labels, networth) {
   };
 }
 
-// % de cambio del patrimonio entre el primer y el último punto de la serie
-// real de 6 meses — reemplaza el porcentaje inventado que traía el widget.
-function netWorthChangePct(networth) {
-  const first = networth?.[0] ?? 0;
-  const last = networth?.[networth.length - 1] ?? 0;
-  if (!first) return 0;
-  return Number((((last - first) / Math.abs(first)) * 100).toFixed(2));
-}
-
 /**
  * `renderDashboard` monta UNA sola vez por navegación (lo llama el router) y
  * registra UN solo listener de "bolsillo:refresh". Adentro, `draw()` es la
@@ -141,10 +131,6 @@ export async function renderDashboard(pageEl) {
     }
 
     // Destruye los charts del render anterior ANTES de crear los nuevos.
-    // `ActivityChart` crea su instancia de Chart.js dentro del `pageEl.append`
-    // de abajo (vía `onChartCreated`), así que si esto se llamara después de
-    // ese append (como estaba antes), destruiría el gráfico recién creado en
-    // el mismo `draw()` — por eso el sparkline nunca se veía.
     destroyCharts();
 
     const currentValues = {
@@ -208,15 +194,6 @@ export async function renderDashboard(pageEl) {
 
       SectionTitle({ label: "Resumen del mes", meta: "10 indicadores" }),
       h("section", { class: "summary-row no-scrollbar" }, cards),
-
-      h("section", { style: "max-width:420px;margin-top:4px" }, [
-        ActivityChart({
-          values: series.networth,
-          changePercent: netWorthChangePct(series.networth),
-          ctaLabel: "Ver salud financiera",
-          onChartCreated: (chart) => (charts.activity = chart),
-        }),
-      ]),
 
       summary.recommendations.length
         ? h("div", {}, [

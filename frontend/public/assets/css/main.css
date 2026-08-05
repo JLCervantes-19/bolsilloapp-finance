@@ -708,44 +708,6 @@
 }
 
 /* ============================================================
-   ActivityChart — widget "hero", superficie Liquid Glass translúcida
-   (antes negro sólido) con acento naranja para la línea y el pill.
-   ============================================================ */
-.activity-chart {
-  border-radius: var(--radius-xl);
-  padding: var(--space-5);
-}
-.activity-chart__head {
-  display: flex;
-  justify-content: flex-end;
-  margin-bottom: var(--space-2);
-}
-.activity-chart__canvas-wrap {
-  position: relative;
-  height: 64px;
-}
-.activity-chart__pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 4px 10px;
-  border-radius: var(--radius-pill);
-  background: rgba(255, 148, 102, 0.18);
-  color: #ff9466;
-  font-size: var(--fs-xs);
-  font-weight: var(--fw-bold);
-}
-.activity-chart__cta {
-  margin-top: var(--space-3);
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  color: var(--text-secondary);
-  font-size: var(--fs-xs);
-  font-weight: var(--fw-bold);
-}
-
-/* ============================================================
    Forms
    ============================================================ */
 .field-label {

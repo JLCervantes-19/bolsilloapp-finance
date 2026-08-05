@@ -8,7 +8,7 @@
   exclusivamente a badges de ícono e indicadores de cambio).
   Se conservan: familia tipográfica, escala de radios/espaciado, y el
   significado semántico fijo de cada color financiero. La única superficie
-  sólida oscura del sistema — el widget "hero" (ActivityChart) — se queda
+  sólida oscura del sistema — el widget "hero" (.hero-savings) — se queda
   igual que antes: es exactamente el mismo rol que cumple el mapa "Live"
   oscuro de la referencia.
 */
@@ -39,7 +39,7 @@
   --text-on-accent: #ffffff;
 
   /* ---------- Texto fijo para las superficies sólidas oscuras
-       (ActivityChart) — no deben heredar el texto oscuro del tema claro. ---------- */
+       (.hero-savings) — no deben heredar el texto oscuro del tema claro. ---------- */
   --text-on-dark-primary: #f5f6fa;
   --text-on-dark-secondary: rgba(245, 246, 250, 0.65);
 

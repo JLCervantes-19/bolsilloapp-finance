@@ -2,7 +2,7 @@ import { h } from "../utils/dom.js";
 
 /**
  * Esqueleto con la misma forma que el dashboard real (header, 10 cards en
- * fila horizontal, hero, 3 chart-cards) — evita el salto de layout que deja
+ * fila horizontal, 3 chart-cards) — evita el salto de layout que deja
  * un placeholder genérico y hace sentir la carga inicial intencional.
  */
 export function DashboardSkeleton() {
@@ -29,7 +29,6 @@ export function DashboardSkeleton() {
     ]),
     h("div", { class: "skeleton", style: "width:160px;height:14px;margin:24px 0 12px" }),
     h("section", { class: "summary-row no-scrollbar" }, Array.from({ length: 6 }, summaryCard)),
-    h("div", { class: "skeleton", style: "max-width:420px;height:150px;border-radius:28px;margin-top:20px" }),
     h("div", { class: "skeleton", style: "width:110px;height:14px;margin:24px 0 12px" }),
     h("section", { class: "summary-grid" }, [chartCard(), chartCard(), h("div", { style: "grid-column:1 / -1" }, [chartCard(true)])]),
   ]);
