@@ -720,6 +720,10 @@
   justify-content: flex-end;
   margin-bottom: var(--space-2);
 }
+.activity-chart__canvas-wrap {
+  position: relative;
+  height: 64px;
+}
 .activity-chart__pill {
   display: inline-flex;
   align-items: center;
