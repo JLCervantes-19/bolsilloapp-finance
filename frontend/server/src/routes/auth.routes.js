@@ -18,12 +18,9 @@ import { env } from "../config/env.js";
 
 // Misma política que el checklist en vivo del frontend
 // (frontend/public/js/utils/passwordPolicy.js) — deben coincidir exacto.
-const passwordSchema = z
-  .string()
-  .min(8, "La contraseña debe tener al menos 8 caracteres")
-  .regex(/[a-z]/, "La contraseña debe tener al menos una letra minúscula")
-  .regex(/[A-Z]/, "La contraseña debe tener al menos una letra mayúscula")
-  .regex(/[0-9]/, "La contraseña debe tener al menos un número");
+// 6 caracteres es el mínimo que Supabase Auth exige internamente y no se
+// puede bajar más.
+const passwordSchema = z.string().min(6, "La contraseña debe tener al menos 6 caracteres");
 
 const signupSchema = z.object({
   email: z.string().email("Ingresá un correo válido"),
@@ -43,12 +40,22 @@ authRouter.post(
   validateBody(signupSchema),
   asyncHandler(async (req, res) => {
     const { email, password, full_name } = req.body;
-    const { data, error } = await anonClient.auth.signUp({
+
+    // Se crea con el cliente admin (service role) y `email_confirm: true`
+    // en vez de `anonClient.auth.signUp` — así el usuario queda confirmado
+    // de entrada, sin depender del link de confirmación por correo, y se
+    // puede loguear inmediatamente después de registrarse.
+    const { error: createError } = await supabaseAdmin.auth.admin.createUser({
       email,
       password,
-      options: { data: { full_name } },
+      email_confirm: true,
+      user_metadata: { full_name },
     });
+    if (createError) throw ApiError.badRequest(translateAuthError(createError.message));
+
+    const { data, error } = await anonClient.auth.signInWithPassword({ email, password });
     if (error) throw ApiError.badRequest(translateAuthError(error.message));
+
     res.status(201).json({ data });
   })
 );

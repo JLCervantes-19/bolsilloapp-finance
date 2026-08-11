@@ -1,13 +1,9 @@
 /**
- * Misma política que el backend (backend/src/routes/auth.routes.js) —
- * deben coincidir exacto para que "cumple todo acá" == "el servidor la acepta".
+ * Misma política que el backend (frontend/server/src/routes/auth.routes.js)
+ * — deben coincidir exacto para que "cumple acá" == "el servidor la acepta".
+ * 6 caracteres es el mínimo que Supabase Auth exige internamente.
  */
-export const PASSWORD_RULES = [
-  { id: "length", label: "Al menos 8 caracteres", test: (v) => v.length >= 8 },
-  { id: "lower", label: "Una letra minúscula", test: (v) => /[a-z]/.test(v) },
-  { id: "upper", label: "Una letra mayúscula", test: (v) => /[A-Z]/.test(v) },
-  { id: "number", label: "Un número", test: (v) => /[0-9]/.test(v) },
-];
+export const PASSWORD_RULES = [{ id: "length", label: "Al menos 6 caracteres", test: (v) => v.length >= 6 }];
 
 export function passwordMeetsPolicy(value) {
   return PASSWORD_RULES.every((rule) => rule.test(value));
