@@ -79,15 +79,21 @@ export async function renderDeudas(pageEl) {
     comparisonRow.append(
       h("div", { class: "glass", style: `border-radius:var(--radius-lg);padding:16px;border:${selectedStrategy === "snowball" ? "2px solid var(--positive)" : "1px solid var(--glass-border)"}` }, [
         h("p", { style: "font-size:13px;font-weight:800;margin:0 0 8px" }, "❄️ Bola de nieve"),
-        h("p", { style: "margin:0 0 2px;font-size:20px;font-weight:800" }, `${s.months} meses`),
-        h("p", { style: "margin:0;font-size:12px;font-weight:600;color:var(--text-secondary)" }, `Interés total: ${fmt(s.totalInterest)}`),
+        h("p", { style: "margin:0 0 2px;font-size:20px;font-weight:800" }, s.paysOff ? `${s.months} meses` : "No se termina"),
+        h("p", { style: "margin:0;font-size:12px;font-weight:600;color:var(--text-secondary)" }, s.paysOff ? `Interés total: ${fmt(s.totalInterest)}` : "Los intereses siguen creciendo"),
       ]),
       h("div", { class: "glass", style: `border-radius:var(--radius-lg);padding:16px;border:${selectedStrategy === "avalanche" ? "2px solid var(--negative)" : "1px solid var(--glass-border)"}` }, [
         h("p", { style: "font-size:13px;font-weight:800;margin:0 0 8px" }, "🏔️ Avalancha"),
-        h("p", { style: "margin:0 0 2px;font-size:20px;font-weight:800" }, `${a.months} meses`),
-        h("p", { style: "margin:0;font-size:12px;font-weight:600;color:var(--text-secondary)" }, `Interés total: ${fmt(a.totalInterest)}`),
+        h("p", { style: "margin:0 0 2px;font-size:20px;font-weight:800" }, a.paysOff ? `${a.months} meses` : "No se termina"),
+        h("p", { style: "margin:0;font-size:12px;font-weight:600;color:var(--text-secondary)" }, a.paysOff ? `Interés total: ${fmt(a.totalInterest)}` : "Los intereses siguen creciendo"),
       ])
     );
+    if (!s.paysOff || !a.paysOff) {
+      comparisonRow.append(
+        h("p", { style: "grid-column:1/-1;margin:4px 0 0;font-size:12px;font-weight:600;color:var(--negative)" },
+          "Con estos pagos alguna deuda no se termina: el pago mínimo no alcanza a cubrir los intereses. Aumentá el pago extra o el mínimo.")
+      );
+    }
   }
 
   function renderOrder() {
@@ -101,7 +107,7 @@ export async function renderDeudas(pageEl) {
             h("p", { style: "margin:0;font-size:13.5px;font-weight:700" }, o.name),
             h("p", { style: "margin:2px 0 0;font-size:11.5px;font-weight:600;color:var(--text-secondary)" }, `${fmt(o.balance)} · ${o.rate > 0 ? o.rate + "% anual" : "Sin interés"}`),
           ]),
-          h("span", { style: "font-size:12px;font-weight:700;color:var(--positive)" }, `Mes ${o.paidMonth}`),
+          h("span", { style: `font-size:12px;font-weight:700;color:${o.paidMonth ? "var(--positive)" : "var(--negative)"}` }, o.paidMonth ? `Mes ${o.paidMonth}` : "Sin fin"),
         ])
       )
     );

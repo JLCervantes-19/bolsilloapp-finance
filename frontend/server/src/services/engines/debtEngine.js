@@ -55,10 +55,13 @@ export function simulate(debts, strategy, extraPayment) {
 
   return {
     months,
+    // false = con estos pagos alguna deuda no se termina nunca (el mínimo
+    // no cubre los intereses); la simulación se cortó en 480 meses.
+    paysOff: !sim.some((d) => d.remaining > 0.5),
     totalInterest: Math.round(totalInterest),
     order: order.map((od) => ({
       ...od,
-      paidMonth: (sim.find((d) => d.id === od.id) || {}).paidMonth || months,
+      paidMonth: (sim.find((d) => d.id === od.id) || {}).paidMonth ?? null,
     })),
   };
 }
