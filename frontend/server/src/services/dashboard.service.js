@@ -6,6 +6,7 @@ import { incomesRepository } from "../repositories/incomes.repository.js";
 import { currentMonthRange, previousMonthRange } from "../utils/dateRange.js";
 import { computeHealthScore, computeNetWorth } from "./engines/financialEngine.js";
 import { buildRecommendations } from "./engines/recommendationEngine.js";
+import { toApiError } from "../utils/dbError.js";
 
 /**
  * Balance disponible = todo el dinero que ha entrado menos todo lo que ha
@@ -14,20 +15,10 @@ import { buildRecommendations } from "./engines/recommendationEngine.js";
  *   ingresos históricos − gastos históricos − ahorro apartado − invertido
  * en vez de ser un número editable a mano.
  */
-async function computeAvailableBalance(supabase) {
-  const [{ data: incomes }, { data: expenses }, { data: goals }, { data: investments }] = await Promise.all([
-    supabase.from("ingresos").select("amount"),
-    supabase.from("gastos").select("amount"),
-    supabase.from("metas").select("current_amount"),
-    supabase.from("inversiones").select("amount_invested"),
-  ]);
-
-  const totalIncome = (incomes || []).reduce((s, r) => s + Number(r.amount), 0);
-  const totalExpenses = (expenses || []).reduce((s, r) => s + Number(r.amount), 0);
-  const totalSaved = (goals || []).reduce((s, r) => s + Number(r.current_amount), 0);
-  const totalInvested = (investments || []).reduce((s, r) => s + Number(r.amount_invested), 0);
-
-  return totalIncome - totalExpenses - totalSaved - totalInvested;
+export async function computeAvailableBalance(supabase) {
+  const { data, error } = await supabase.rpc("get_balance_totals");
+  if (error) throw toApiError(error);
+  return Number(data.total_income) - Number(data.total_expenses) - Number(data.total_saved) - Number(data.total_invested);
 }
 
 export async function getDashboardSummary(supabase) {

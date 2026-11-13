@@ -5,6 +5,7 @@ import { goalsRepository } from "../repositories/goals.repository.js";
 import { investmentsRepository } from "../repositories/investments.repository.js";
 import { lastMonthsRanges } from "../utils/dateRange.js";
 import { computeNetWorth } from "./engines/financialEngine.js";
+import { computeAvailableBalance } from "./dashboard.service.js";
 
 /**
  * Serie de 6 meses para Ingresos vs. gastos, Fijos vs. variables, y
@@ -42,13 +43,7 @@ export async function getMonthlySeries(supabase, months = 6) {
   const totalSavings = goals.reduce((s, g) => s + Number(g.current_amount), 0);
   const totalInvestments = investments.reduce((s, i) => s + Number(i.current_value), 0);
 
-  const { data: allIncomes } = await supabase.from("ingresos").select("amount");
-  const { data: allExpenses } = await supabase.from("gastos").select("amount");
-  const balance =
-    (allIncomes || []).reduce((s, r) => s + Number(r.amount), 0) -
-    (allExpenses || []).reduce((s, r) => s + Number(r.amount), 0) -
-    totalSavings -
-    totalInvestments;
+  const balance = await computeAvailableBalance(supabase);
 
   const currentNetWorth = computeNetWorth({ balance, totalSavings, totalInvestments, totalDebts });
 

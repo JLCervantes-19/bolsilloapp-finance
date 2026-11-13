@@ -494,6 +494,27 @@ create trigger ahorros_assert_owned_refs before insert or update of goal_id, use
 revoke execute on function public.assert_owned_refs() from public, anon;
 
 -- ============================================================================
+-- 7. TOTALES PARA EL SALDO DISPONIBLE (migración get_balance_totals)
+-- ============================================================================
+-- Suma en Postgres (sin el tope de 1000 filas de PostgREST).
+create or replace function public.get_balance_totals()
+returns json
+language sql
+stable
+security invoker
+set search_path = public
+as $$
+  select json_build_object(
+    'total_income',   coalesce((select sum(amount)          from ingresos    where user_id = auth.uid()), 0),
+    'total_expenses', coalesce((select sum(amount)          from gastos      where user_id = auth.uid()), 0),
+    'total_saved',    coalesce((select sum(current_amount)  from metas       where user_id = auth.uid()), 0),
+    'total_invested', coalesce((select sum(amount_invested) from inversiones where user_id = auth.uid()), 0)
+  );
+$$;
+revoke execute on function public.get_balance_totals() from public, anon;
+grant execute on function public.get_balance_totals() to authenticated;
+
+-- ============================================================================
 -- Fin del schema — 12 tablas (nombres en español), RLS en todas, triggers de
 -- updated_at + audit_log + alta automática de usuario/configuración/categorías
 -- por defecto al registrarse.
