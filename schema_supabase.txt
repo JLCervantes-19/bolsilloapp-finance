@@ -292,6 +292,12 @@ begin
   v_user_id := coalesce(new.user_id, old.user_id);
   v_entity_id := coalesce(new.id, old.id);
 
+  -- Al borrar un usuario, el cascade elimina sus filas: si el usuario ya no
+  -- existe no se audita (si no, la FK de auditoria bloquea borrar la cuenta).
+  if TG_OP = 'DELETE' and not exists (select 1 from auth.users where id = v_user_id) then
+    return old;
+  end if;
+
   insert into public.auditoria (user_id, action, entity, entity_id, metadata)
   values (
     v_user_id,
@@ -439,6 +445,17 @@ create policy "configuracion_update_own" on public.configuracion for update usin
 -- auditoria ------------------------------------------------------------------
 -- solo lectura para el dueño; las escrituras las hace log_audit() (security definer)
 create policy "auditoria_select_own" on public.auditoria for select using (user_id = auth.uid());
+
+-- ============================================================================
+-- 5. PERMISOS (migración harden_table_grants)
+-- ============================================================================
+-- anon nunca toca tablas de negocio (el backend usa el JWT del usuario =>
+-- authenticated). TRUNCATE ignora RLS; REFERENCES/TRIGGER no hacen falta.
+revoke all on all tables in schema public from anon;
+revoke truncate, references, trigger on all tables in schema public from authenticated;
+revoke insert, update, delete on public.auditoria from authenticated;
+alter default privileges for role postgres in schema public revoke all on tables from anon;
+alter default privileges for role postgres in schema public revoke truncate, references, trigger on tables from authenticated;
 
 -- ============================================================================
 -- Fin del schema — 12 tablas (nombres en español), RLS en todas, triggers de

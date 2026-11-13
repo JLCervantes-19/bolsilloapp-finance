@@ -24,7 +24,7 @@ export const expenseSchema = z.object({
   amount: amount(),
   description: z.string().max(280).optional(),
   payment_method: z.string().max(60).optional(),
-  tags: z.array(z.string().max(40)).optional(),
+  tags: z.array(z.string().max(40)).max(20).optional(),
   is_fixed: z.boolean().optional(),
   date: isoDate().optional(),
 });

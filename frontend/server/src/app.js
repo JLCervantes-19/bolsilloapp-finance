@@ -15,6 +15,10 @@ export function createApp() {
   const app = express();
 
   app.disable("x-powered-by");
+  // Vercel (y cualquier proxy) pone la IP real en X-Forwarded-For. Sin esto
+  // req.ip es la IP del proxy y el rate limit trataría a todos los usuarios
+  // como uno solo (100 req / 15 min compartidos por toda la app).
+  app.set("trust proxy", 1);
   app.use(helmet());
   app.use(
     cors({

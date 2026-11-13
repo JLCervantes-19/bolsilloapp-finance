@@ -5,6 +5,17 @@
   ],
   "routes": [
     { "src": "/api/(.*)", "dest": "frontend/api/index.js" },
-    { "src": "/(.*)", "dest": "frontend/public/$1" }
+    {
+      "src": "/(.*)",
+      "dest": "frontend/public/$1",
+      "headers": {
+        "Content-Security-Policy": "default-src 'self'; script-src 'self' https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'",
+        "Strict-Transport-Security": "max-age=63072000; includeSubDomains; preload",
+        "X-Content-Type-Options": "nosniff",
+        "X-Frame-Options": "DENY",
+        "Referrer-Policy": "strict-origin-when-cross-origin",
+        "Permissions-Policy": "camera=(), microphone=(), geolocation=()"
+      }
+    }
   ]
 }
