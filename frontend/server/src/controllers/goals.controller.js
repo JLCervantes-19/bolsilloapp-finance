@@ -1,7 +1,6 @@
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { goalsRepository } from "../repositories/goals.repository.js";
-import { savingsRepository } from "../repositories/savings.repository.js";
-import { ApiError } from "../utils/ApiError.js";
+import { toApiError } from "../utils/dbError.js";
 
 export const goalsController = {
   list: asyncHandler(async (req, res) => {
@@ -31,23 +30,16 @@ export const goalsController = {
 
   /**
    * POST /api/goals/:id/contribute { amount }
-   * Registra el abono en `savings` y suma `amount` al `current_amount` de
-   * la meta — el mismo flujo de "Abonar" del prototipo (submitGoalContribution).
+   * Registra el abono en `ahorros` y suma `amount` al `current_amount` de
+   * la meta en una sola transacción (RPC contribute_to_goal) — dos abonos
+   * simultáneos ya no se pisan.
    */
   contribute: asyncHandler(async (req, res) => {
-    const { amount } = req.body;
-    if (!amount || amount <= 0) throw ApiError.badRequest("El monto debe ser mayor a 0");
-
-    const goal = await goalsRepository.getById(req.supabase, req.params.id);
-    const updatedGoal = await goalsRepository.update(req.supabase, req.params.id, {
-      current_amount: Number(goal.current_amount) + amount,
+    const { data, error } = await req.supabase.rpc("contribute_to_goal", {
+      p_goal_id: req.params.id,
+      p_amount: req.body.amount,
     });
-    const saving = await savingsRepository.create(req.supabase, req.user.id, {
-      goal_id: req.params.id,
-      amount,
-      type: goal.is_emergency_fund ? "emergency" : "manual",
-    });
-
-    res.status(201).json({ data: { goal: updatedGoal, saving } });
+    if (error) throw toApiError(error);
+    res.status(201).json({ data });
   }),
 };

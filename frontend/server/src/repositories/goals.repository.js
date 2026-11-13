@@ -9,9 +9,4 @@ export const goalsRepository = {
     if (error) throw toApiError(error);
     return data;
   },
-
-  async incrementCurrentAmount(supabase, id, delta) {
-    const goal = await this.getById(supabase, id);
-    return this.update(supabase, id, { current_amount: Number(goal.current_amount) + delta });
-  },
 };

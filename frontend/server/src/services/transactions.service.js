@@ -1,8 +1,7 @@
 import { expensesRepository } from "../repositories/expenses.repository.js";
 import { incomesRepository } from "../repositories/incomes.repository.js";
 import { goalsRepository } from "../repositories/goals.repository.js";
-import { savingsRepository } from "../repositories/savings.repository.js";
-import { investmentsRepository } from "../repositories/investments.repository.js";
+import { toApiError } from "../utils/dbError.js";
 
 /**
  * Ingesta de flujo de caja en tiempo real — port del flujo "agregar gasto/
@@ -38,37 +37,24 @@ export async function registerQuickIncome(
 
   if (allocate_emergency_fund_pct > 0) {
     const emergencyFund = await goalsRepository.getEmergencyFund(supabase);
-    if (emergencyFund) {
-      const alloc = Math.round(amount * (allocate_emergency_fund_pct / 100));
-      await goalsRepository.incrementCurrentAmount(supabase, emergencyFund.id, alloc);
-      emergencyFundAllocation = await savingsRepository.create(supabase, userId, {
-        goal_id: emergencyFund.id,
-        amount: alloc,
-        type: "automatic",
+    const alloc = Math.round(amount * (allocate_emergency_fund_pct / 100));
+    if (emergencyFund && alloc > 0) {
+      const { data, error } = await supabase.rpc("contribute_to_goal", {
+        p_goal_id: emergencyFund.id,
+        p_amount: alloc,
+        p_type: "automatic",
       });
+      if (error) throw toApiError(error);
+      emergencyFundAllocation = data.saving;
     }
   }
 
   if (allocate_investment_pct > 0) {
     const alloc = Math.round(amount * (allocate_investment_pct / 100));
-    const { data: existing } = await supabase
-      .from("inversiones")
-      .select("*")
-      .eq("name", "Aportes automáticos")
-      .maybeSingle();
-
-    if (existing) {
-      investmentAllocation = await investmentsRepository.update(supabase, existing.id, {
-        amount_invested: Number(existing.amount_invested) + alloc,
-        current_value: Number(existing.current_value) + alloc,
-      });
-    } else {
-      investmentAllocation = await investmentsRepository.create(supabase, userId, {
-        name: "Aportes automáticos",
-        type: "automatic",
-        amount_invested: alloc,
-        current_value: alloc,
-      });
+    if (alloc > 0) {
+      const { data, error } = await supabase.rpc("add_auto_investment", { p_amount: alloc });
+      if (error) throw toApiError(error);
+      investmentAllocation = data;
     }
   }
 
