@@ -1,6 +1,7 @@
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { alertsRepository } from "../repositories/alerts.repository.js";
 import { getDashboardSummary } from "../services/dashboard.service.js";
+import { todayISO } from "../utils/dateRange.js";
 
 export const alertsController = {
   list: asyncHandler(async (req, res) => {
@@ -16,10 +17,10 @@ export const alertsController = {
    */
   generate: asyncHandler(async (req, res) => {
     const summary = await getDashboardSummary(req.supabase);
-    const today = new Date().toISOString().slice(0, 10);
+    const today = todayISO();
     const existing = await alertsRepository.list(req.supabase, { orderBy: "created_at", ascending: false });
     const alreadyToday = new Set(
-      existing.filter((a) => a.created_at.slice(0, 10) === today).map((a) => a.type)
+      existing.filter((a) => todayISO(new Date(a.created_at)) === today).map((a) => a.type)
     );
 
     const created = [];

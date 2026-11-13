@@ -18,8 +18,11 @@ export function fmtPct(n, digits = 0) {
   return `${Number(n).toFixed(digits)}%`;
 }
 
+// Fecha local del dispositivo (no UTC): toISOString() adelantaba el día
+// después de las 7 p. m. en Colombia.
 export function todayISO() {
-  return new Date().toISOString().slice(0, 10);
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
 export function firstName(fullName) {
