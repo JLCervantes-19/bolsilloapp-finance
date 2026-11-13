@@ -5,16 +5,21 @@ import { validateBody } from "../middlewares/validate.middleware.js";
 import { ApiError } from "../utils/ApiError.js";
 import { supabaseAdmin, createAuthSessionClient } from "../config/supabase.js";
 import { translateAuthError } from "../utils/authErrors.js";
-import { env } from "../config/env.js";
+import {
+  USERNAME_RE,
+  normalizeUsername,
+  usernameToEmail,
+  isInternalEmail,
+  generateRecoveryCode,
+  hashRecoveryCode,
+  verifyRecoveryCode,
+} from "../utils/recovery.js";
 import { requireAuth } from "../middlewares/auth.middleware.js";
 
 /**
- * Capa delgada sobre Supabase Auth — el backend no gestiona contraseñas ni
- * sesiones propias, solo reenvía a GoTrue (auth.signInWithPassword /
- * auth.signUp) usando la anon key, igual que lo haría el propio frontend.
- * Existe para que el frontend nunca necesite la anon key embebida si se
- * prefiere pasar todo por el backend; es opcional, el frontend también
- * puede llamar a Supabase Auth directo con supabase-js.
+ * Capa delgada sobre Supabase Auth. La app no pide ni envía correos: se
+ * entra con usuario + contraseña (el correo de Supabase es interno, ver
+ * utils/recovery.js) y se recupera la cuenta con un código de recuperación.
  */
 
 // Misma política que el checklist en vivo del frontend
@@ -23,17 +28,57 @@ import { requireAuth } from "../middlewares/auth.middleware.js";
 // puede bajar más.
 const passwordSchema = z.string().min(6, "La contraseña debe tener al menos 6 caracteres");
 
+const usernameSchema = z
+  .string()
+  .transform(normalizeUsername)
+  .pipe(z.string().regex(USERNAME_RE, "El usuario debe tener de 3 a 30 caracteres: letras sin tilde, números, punto, guion o guion bajo. Sin espacios y sin terminar en punto o guion."));
+
 const signupSchema = z.object({
-  email: z.string().email("Ingresá un correo válido"),
+  username: usernameSchema,
   password: passwordSchema,
   full_name: z.string().min(1).max(120).optional(),
   accepted_privacy: z.literal(true, { error: "Debés aceptar la política de tratamiento de datos" }),
 });
 
+// `username` también acepta el correo de las cuentas creadas antes de
+// quitar los correos, para que puedan entrar y elegir su usuario.
 const loginSchema = z.object({
-  email: z.string().email("Ingresá un correo válido"),
+  username: z.string().trim().min(1, "Ingresá tu usuario"),
   password: z.string().min(1, "Ingresá tu contraseña"),
 });
+
+const recoverSchema = z.object({
+  username: z.string().transform(normalizeUsername).pipe(z.string().min(1, "Ingresá tu usuario")),
+  recovery_code: z.string().min(1, "Ingresá tu código de recuperación"),
+  password: passwordSchema,
+});
+
+const loginEmail = (value) => (value.includes("@") ? value.toLowerCase() : usernameToEmail(value));
+
+/** Genera un código nuevo, guarda solo su hash y devuelve el código en claro (se muestra una vez). */
+async function issueRecoveryCode(userId, username) {
+  const code = generateRecoveryCode();
+  await saveRecoveryHash(userId, username, await hashRecoveryCode(code));
+  return code;
+}
+
+/** Guarda (o reemplaza) el hash del código; lanza ApiError si falla. */
+async function saveRecoveryHash(userId, username, codeHash) {
+  const { error } = await supabaseAdmin
+    .from("recuperacion_cuentas")
+    .upsert({ user_id: userId, username, code_hash: codeHash, updated_at: new Date().toISOString() });
+  if (error) {
+    console.error("[auth] recovery upsert", error);
+    if (error.code === "23505") throw ApiError.badRequest("Ese usuario ya existe. Elegí otro.");
+    throw ApiError.internal("No se pudo generar el código de recuperación. Intentá de nuevo.");
+  }
+}
+
+async function signIn(email, password) {
+  const { data, error } = await createAuthSessionClient().auth.signInWithPassword({ email, password });
+  if (error) throw ApiError.unauthorized(translateAuthError(error.message));
+  return data;
+}
 
 export const authRouter = Router();
 
@@ -41,24 +86,30 @@ authRouter.post(
   "/signup",
   validateBody(signupSchema),
   asyncHandler(async (req, res) => {
-    const { email, password, full_name } = req.body;
+    const { username, password, full_name } = req.body;
+    const email = usernameToEmail(username);
 
-    // Se crea con el cliente admin (service role) y `email_confirm: true`
-    // en vez de `auth.signUp` con la anon key — así el usuario queda confirmado
-    // de entrada, sin depender del link de confirmación por correo, y se
-    // puede loguear inmediatamente después de registrarse.
-    const { error: createError } = await supabaseAdmin.auth.admin.createUser({
+    // Se crea con el cliente admin y `email_confirm: true`: el correo es
+    // interno (nunca recibe mensajes) y el usuario entra de inmediato.
+    const { data: created, error: createError } = await supabaseAdmin.auth.admin.createUser({
       email,
       password,
       email_confirm: true,
-      user_metadata: { full_name, privacy_accepted_at: new Date().toISOString() },
+      user_metadata: { full_name, username, privacy_accepted_at: new Date().toISOString() },
     });
     if (createError) throw ApiError.badRequest(translateAuthError(createError.message));
 
-    const { data, error } = await createAuthSessionClient().auth.signInWithPassword({ email, password });
-    if (error) throw ApiError.badRequest(translateAuthError(error.message));
+    let recovery_code;
+    try {
+      recovery_code = await issueRecoveryCode(created.user.id, username);
+    } catch (err) {
+      // Sin código no hay forma de recuperar la cuenta: mejor no crearla.
+      await supabaseAdmin.auth.admin.deleteUser(created.user.id).catch(() => {});
+      throw err;
+    }
 
-    res.status(201).json({ data });
+    const data = await signIn(email, password);
+    res.status(201).json({ data: { ...data, recovery_code } });
   })
 );
 
@@ -66,9 +117,7 @@ authRouter.post(
   "/login",
   validateBody(loginSchema),
   asyncHandler(async (req, res) => {
-    const { email, password } = req.body;
-    const { data, error } = await createAuthSessionClient().auth.signInWithPassword({ email, password });
-    if (error) throw ApiError.unauthorized(translateAuthError(error.message));
+    const data = await signIn(loginEmail(req.body.username), req.body.password);
     res.json({ data });
   })
 );
@@ -91,38 +140,100 @@ authRouter.post(
   })
 );
 
+// Olvidé mi contraseña: usuario + código de recuperación + contraseña nueva.
+// El código se reemplaza por uno nuevo al usarlo, y se cierran las demás
+// sesiones (si alguien más tenía acceso, lo pierde).
 authRouter.post(
-  "/forgot-password",
-  validateBody(z.object({ email: z.string().email("Ingresá un correo válido") })),
+  "/recover",
+  validateBody(recoverSchema),
   asyncHandler(async (req, res) => {
-    // Supabase no revela si el correo existe o no (evita enumeración de
-    // usuarios) — siempre respondemos el mismo mensaje genérico, incluso si
-    // `error` viene poblado por un correo inexistente.
-    await createAuthSessionClient().auth.resetPasswordForEmail(req.body.email, {
-      redirectTo: env.frontendUrl,
-    });
-    res.json({ data: { message: "Si el correo existe, te enviamos un link para restablecer tu contraseña." } });
+    const { username, recovery_code, password } = req.body;
+    const invalid = () => ApiError.badRequest("Usuario o código de recuperación incorrectos.");
+    const { data: row, error: readError } = await supabaseAdmin
+      .from("recuperacion_cuentas")
+      .select("user_id, code_hash")
+      .eq("username", username)
+      .maybeSingle();
+    if (readError) {
+      console.error("[auth] recovery read", readError);
+      throw ApiError.internal("No se pudo recuperar la cuenta. Intentá de nuevo.");
+    }
+    // Mismo mensaje (y mismo tiempo) si el usuario no existe o el código no coincide.
+    if (!(await verifyRecoveryCode(recovery_code, row?.code_hash))) throw invalid();
+
+    // Rotación condicionada al hash leído: si dos pedidos usan el mismo
+    // código a la vez, solo uno la gana (el código es de un solo uso).
+    const new_code = generateRecoveryCode();
+    const { data: claimed, error: claimError } = await supabaseAdmin
+      .from("recuperacion_cuentas")
+      .update({ code_hash: await hashRecoveryCode(new_code), updated_at: new Date().toISOString() })
+      .eq("user_id", row.user_id)
+      .eq("code_hash", row.code_hash)
+      .select("user_id");
+    if (claimError) {
+      console.error("[auth] recovery rotate", claimError);
+      throw ApiError.internal("No se pudo recuperar la cuenta. Intentá de nuevo.");
+    }
+    if (!claimed?.length) throw invalid();
+
+    const { error } = await supabaseAdmin.auth.admin.updateUserById(row.user_id, { password });
+    if (error) {
+      // La contraseña no cambió: se restaura el código anterior para que siga sirviendo.
+      await saveRecoveryHash(row.user_id, username, row.code_hash).catch(() => {});
+      throw ApiError.badRequest(translateAuthError(error.message));
+    }
+
+    const data = await signIn(usernameToEmail(username), password);
+    await supabaseAdmin.auth.admin.signOut(data.session.access_token, "others").catch(() => {});
+    res.json({ data: { ...data, recovery_code: new_code } });
   })
 );
 
+// Cuentas creadas con correo: eligen usuario y reciben su código.
 authRouter.post(
-  "/reset-password",
-  validateBody(
-    z.object({
-      access_token: z.string().min(1, "Link de recuperación inválido"),
-      refresh_token: z.string().min(1, "Link de recuperación inválido"),
-      password: passwordSchema,
-    })
-  ),
+  "/claim-username",
+  requireAuth,
+  validateBody(z.object({ username: usernameSchema })),
   asyncHandler(async (req, res) => {
-    const { access_token, refresh_token, password } = req.body;
-    const client = createAuthSessionClient();
-    const { error: sessionError } = await client.auth.setSession({ access_token, refresh_token });
-    if (sessionError) throw ApiError.unauthorized("El link de recuperación expiró o ya se usó — pedí uno nuevo.");
+    // Ya lo eligió (p. ej. desde otro dispositivo): responde sin código nuevo
+    // para que el cliente actualice su sesión y siga.
+    if (isInternalEmail(req.user.email)) {
+      return res.json({ data: { username: req.user.email.split("@")[0], recovery_code: null } });
+    }
+    const { username } = req.body;
 
-    const { error } = await client.auth.updateUser({ password });
-    if (error) throw ApiError.badRequest(translateAuthError(error.message));
-    res.json({ data: { message: "Contraseña actualizada" } });
+    // Primero el código (reserva el usuario en la tabla) y después el correo
+    // interno; si lo segundo falla se deshace lo primero y se puede reintentar.
+    const recovery_code = await issueRecoveryCode(req.user.id, username);
+    const { error } = await supabaseAdmin.auth.admin.updateUserById(req.user.id, {
+      email: usernameToEmail(username),
+      email_confirm: true,
+      user_metadata: { ...req.user.user_metadata, username },
+    });
+    if (error) {
+      await supabaseAdmin.from("recuperacion_cuentas").delete().eq("user_id", req.user.id);
+      throw ApiError.badRequest(translateAuthError(error.message));
+    }
+    res.json({ data: { username, recovery_code } });
+  })
+);
+
+// Código nuevo (si perdió el anterior). Pide la contraseña para que una
+// sesión robada no alcance para quedarse con la cuenta.
+authRouter.post(
+  "/recovery-code",
+  requireAuth,
+  validateBody(z.object({ password: z.string().min(1, "Ingresá tu contraseña") })),
+  asyncHandler(async (req, res) => {
+    if (!isInternalEmail(req.user.email)) throw ApiError.badRequest("Primero elegí tu nombre de usuario.");
+    const { data, error } = await createAuthSessionClient().auth.signInWithPassword({ email: req.user.email, password: req.body.password });
+    // 400 y no 401: el cliente trata 401 como sesión vencida y cerraría la sesión.
+    if (error) throw ApiError.badRequest("Contraseña incorrecta.");
+    // Esa verificación abrió una sesión que nadie va a usar: se cierra.
+    await supabaseAdmin.auth.admin.signOut(data.session.access_token, "local").catch(() => {});
+    const username = req.user.email.split("@")[0];
+    const recovery_code = await issueRecoveryCode(req.user.id, username);
+    res.json({ data: { recovery_code } });
   })
 );
 

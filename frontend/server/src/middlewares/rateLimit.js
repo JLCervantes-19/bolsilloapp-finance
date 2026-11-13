@@ -16,11 +16,11 @@ export function userKey(req) {
 // estar muchos usuarios legítimos (CGNAT móvil, oficinas).
 export const ipFloodLimiter = rateLimit({ ...common, limit: 1000 });
 
-/** Clave por IP + correo: frena fuerza bruta contra una cuenta sin
+/** Clave por IP + usuario: frena fuerza bruta contra una cuenta sin
  * bloquear a otras personas que comparten la IP (CGNAT, oficinas). */
 export function authKey(req) {
-  const email = String(req.body?.email || "").trim().toLowerCase();
-  return `auth:${req.ip}:${email}`;
+  const user = String(req.body?.username || "").trim().toLowerCase();
+  return `auth:${req.ip}:${user}`;
 }
 
 /** Rutas de /api/auth que no son intentos de credenciales. */
@@ -28,7 +28,7 @@ export function skipNonCredentialRoutes(req) {
   return ["/refresh", "/logout", "/account"].includes(req.path);
 }
 
-// Fuerza bruta de login/registro/recuperación: 20 por IP+correo y un techo
+// Fuerza bruta de login/registro/recuperación: 20 por IP+usuario y un techo
 // alto por IP. /refresh tiene el suyo; logout y eliminar cuenta no cuentan.
 export const authLimiter = rateLimit({ ...common, limit: 20, keyGenerator: authKey, skip: skipNonCredentialRoutes });
 export const authIpLimiter = rateLimit({ ...common, limit: 200, skip: skipNonCredentialRoutes });

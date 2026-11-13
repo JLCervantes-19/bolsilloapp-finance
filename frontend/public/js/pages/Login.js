@@ -1,31 +1,47 @@
 import { h, clear } from "../utils/dom.js";
 import { Button, setButtonState } from "../components/Button.js";
 import { authService } from "../services/auth.js";
-import { showToast } from "../components/Toast.js";
 import { PasswordRules } from "../components/PasswordRules.js";
 import { passwordMeetsPolicy } from "../utils/passwordPolicy.js";
+import { showRecoveryCode } from "../components/RecoveryCode.js";
+import { USERNAME_HINT, usernameError } from "../utils/usernamePolicy.js";
+
+const show = (el, visible, display = "block") => (el.style.display = visible ? display : "none");
 
 export function renderLogin({ onSuccess }) {
   let mode = "login"; // login | signup | forgot
 
-  const nameField = h("input", { type: "text", class: "text-field", placeholder: "Tu nombre", style: "display:none" });
-  const emailField = h("input", { type: "email", class: "text-field", placeholder: "tú@correo.com", required: true });
-  const passwordField = h("input", {
-    type: "password",
+  const nameLabel = h("p", { class: "field-label" }, "Nombre");
+  const nameField = h("input", { type: "text", class: "text-field", placeholder: "Tu nombre", autocomplete: "name" });
+  const usernameField = h("input", {
+    type: "text",
     class: "text-field",
-    placeholder: "Tu contraseña",
+    placeholder: "tu_usuario",
     required: true,
-    autocomplete: "new-password",
+    autocomplete: "username",
+    autocapitalize: "none",
+    spellcheck: "false",
+    maxLength: 120, // las cuentas antiguas todavía pueden entrar con su correo
   });
+  const usernameHint = h("p", { class: "auth-hint" }, USERNAME_HINT);
+  const codeLabel = h("p", { class: "field-label" }, "Código de recuperación");
+  const codeField = h("input", {
+    type: "text",
+    class: "text-field",
+    placeholder: "XXXX-XXXX-XXXX",
+    autocomplete: "off",
+    autocapitalize: "characters",
+    spellcheck: "false",
+  });
+  const passwordLabel = h("p", { class: "field-label" }, "Contraseña");
+  const passwordField = h("input", { type: "password", class: "text-field", placeholder: "Tu contraseña", required: true });
   const passwordRules = PasswordRules();
   const submitBtn = Button({ label: "Entrar", fullWidth: true, type: "submit" });
-  const switchBtn = h("button", { type: "button", class: "auth-switch" }, "¿No tienes cuenta? Crear una");
-  const forgotBtn = h("button", { type: "button", class: "auth-switch" }, "¿Olvidaste tu contraseña?");
+  const switchBtn = h("button", { type: "button", class: "auth-switch" });
+  const forgotBtn = h("button", { type: "button", class: "auth-switch" });
   const errorEl = h("p", { class: "auth-error" });
-  const nameLabel = h("p", { class: "field-label", style: "display:none" }, "Nombre");
-  const passwordLabel = h("p", { class: "field-label" }, "Contraseña");
   const privacyCheck = h("input", { type: "checkbox", id: "accept-privacy" });
-  const privacyRow = h("label", { for: "accept-privacy", class: "field-label", style: "display:none;gap:8px;align-items:flex-start;text-transform:none" }, [
+  const privacyRow = h("label", { for: "accept-privacy", class: "field-label", style: "gap:8px;align-items:flex-start;text-transform:none" }, [
     privacyCheck,
     h("span", {}, [
       "Acepto la ",
@@ -39,21 +55,32 @@ export function renderLogin({ onSuccess }) {
   passwordField.addEventListener("input", () => passwordRules.update(passwordField.value));
 
   function applyMode() {
-    nameLabel.style.display = mode === "signup" ? "block" : "none";
-    nameField.style.display = mode === "signup" ? "block" : "none";
-    if (mode !== "signup") nameField.value = ""; // que no quede pegado el nombre si se vuelve a "Crear cuenta"
-    passwordRules.el.style.display = mode === "signup" ? "flex" : "none";
-    privacyRow.style.display = mode === "signup" ? "flex" : "none";
+    const signup = mode === "signup";
+    const forgot = mode === "forgot";
+    const newPassword = signup || forgot;
+
+    show(nameLabel, signup);
+    show(nameField, signup);
+    if (!signup) nameField.value = "";
+    show(usernameHint, signup);
+    show(codeLabel, forgot);
+    show(codeField, forgot);
+    codeField.required = forgot;
+    if (!forgot) codeField.value = "";
+    show(passwordRules.el, newPassword, "flex");
+    show(privacyRow, signup, "flex");
     privacyCheck.checked = false;
-    passwordLabel.style.display = mode === "forgot" ? "none" : "block";
-    passwordField.style.display = mode === "forgot" ? "none" : "block";
+
+    passwordLabel.textContent = forgot ? "Contraseña nueva" : "Contraseña";
+    passwordField.placeholder = forgot ? "Tu contraseña nueva" : "Tu contraseña";
+    passwordField.autocomplete = newPassword ? "new-password" : "current-password";
     passwordField.value = "";
     passwordRules.update("");
-    passwordField.autocomplete = mode === "signup" ? "new-password" : "current-password";
-    submitBtn.querySelector(".btn__label").textContent = mode === "signup" ? "Crear cuenta" : mode === "forgot" ? "Enviar link de recuperación" : "Entrar";
-    switchBtn.style.display = mode === "forgot" ? "none" : "block";
-    switchBtn.textContent = mode === "signup" ? "¿Ya tienes cuenta? Entrar" : "¿No tienes cuenta? Crear una";
-    forgotBtn.textContent = mode === "forgot" ? "Volver a iniciar sesión" : "¿Olvidaste tu contraseña?";
+
+    submitBtn.querySelector(".btn__label").textContent = signup ? "Crear cuenta" : forgot ? "Cambiar contraseña" : "Entrar";
+    show(switchBtn, !forgot);
+    switchBtn.textContent = signup ? "¿Ya tienes cuenta? Entrar" : "¿No tienes cuenta? Crear una";
+    forgotBtn.textContent = forgot ? "Volver a iniciar sesión" : "¿Olvidaste tu contraseña?";
     clear(errorEl);
   }
 
@@ -80,36 +107,34 @@ export function renderLogin({ onSuccess }) {
           return;
         }
 
-        if (mode === "signup" && !passwordMeetsPolicy(passwordField.value)) {
+        if (mode === "signup" && usernameError(usernameField.value)) {
+          errorEl.textContent = usernameError(usernameField.value);
+          usernameField.focus();
+          return;
+        }
+
+        if (mode !== "login" && !passwordMeetsPolicy(passwordField.value)) {
           errorEl.textContent = "Completá los requisitos de la contraseña marcados abajo.";
           passwordField.focus();
           return;
         }
 
+        const username = usernameField.value.trim().toLowerCase();
         setButtonState(submitBtn, "loading");
         try {
-          if (mode === "forgot") {
-            await authService.requestPasswordReset(emailField.value);
-            setButtonState(submitBtn, "success");
-            showToast("Si el correo existe, te enviamos un link para restablecer tu contraseña.");
-            mode = "login";
-            applyMode();
-            setButtonState(submitBtn, null);
-            return;
-          }
           if (mode === "signup") {
-            const data = await authService.signup(emailField.value, passwordField.value, nameField.value, privacyCheck.checked);
-            if (!data.session) {
-              showToast("Cuenta creada — revisá tu correo para confirmar");
-              mode = "login";
-              applyMode();
-              setButtonState(submitBtn, null);
-              return;
-            }
+            const data = await authService.signup(username, passwordField.value, nameField.value.trim(), privacyCheck.checked);
+            setButtonState(submitBtn, "success");
+            await showRecoveryCode(data.recovery_code, { username });
+          } else if (mode === "forgot") {
+            const data = await authService.recover(username, codeField.value, passwordField.value);
+            setButtonState(submitBtn, "success");
+            // El código usado ya no sirve: se entrega uno nuevo.
+            await showRecoveryCode(data.recovery_code, { username });
           } else {
-            await authService.login(emailField.value, passwordField.value);
+            await authService.login(username, passwordField.value);
+            setButtonState(submitBtn, "success");
           }
-          setButtonState(submitBtn, "success");
           onSuccess?.();
         } catch (err) {
           setButtonState(submitBtn, "error");
@@ -121,8 +146,11 @@ export function renderLogin({ onSuccess }) {
     [
       nameLabel,
       nameField,
-      h("p", { class: "field-label" }, "Correo"),
-      emailField,
+      h("p", { class: "field-label" }, "Usuario"),
+      usernameField,
+      usernameHint,
+      codeLabel,
+      codeField,
       passwordLabel,
       passwordField,
       passwordRules.el,

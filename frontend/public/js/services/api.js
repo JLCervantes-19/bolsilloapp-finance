@@ -1,6 +1,7 @@
 import { API_BASE_URL } from "./config.js";
 import { store } from "../store/store.js";
 import { authService } from "./auth.js";
+import { apiErrorMessage } from "../utils/errors.js";
 
 class ApiError extends Error {
   constructor(status, message, details) {
@@ -71,7 +72,7 @@ async function request(method, path, body, retried = false, raw = false) {
   if (res.status === 204) return null;
 
   const json = await res.json().catch(() => ({}));
-  if (!res.ok) throw new ApiError(res.status, json.error?.message || "Error de red", json.error?.details);
+  if (!res.ok) throw new ApiError(res.status, apiErrorMessage(json, "Error de red"), json.error?.details);
   return raw ? json : json.data;
 }
 

@@ -1,5 +1,6 @@
 import { API_BASE_URL } from "./config.js";
 import { store } from "../store/store.js";
+import { apiErrorMessage } from "../utils/errors.js";
 
 const STORAGE_KEY = "onemillion.session";
 
@@ -21,7 +22,7 @@ async function request(path, body) {
   });
   const json = await res.json().catch(() => ({}));
   if (!res.ok) {
-    const err = new Error(json.error?.message || "Error de autenticación");
+    const err = new Error(apiErrorMessage(json, "Error de autenticación"));
     err.status = res.status;
     throw err;
   }
@@ -35,14 +36,14 @@ function persistSession(session) {
 }
 
 export const authService = {
-  async signup(email, password, fullName, acceptedPrivacy) {
-    const data = await request("signup", { email, password, full_name: fullName, accepted_privacy: acceptedPrivacy });
+  async signup(username, password, fullName, acceptedPrivacy) {
+    const data = await request("signup", { username, password, full_name: fullName || undefined, accepted_privacy: acceptedPrivacy });
     if (data.session) persistSession(data.session);
     return data;
   },
 
-  async login(email, password) {
-    const data = await request("login", { email, password });
+  async login(username, password) {
+    const data = await request("login", { username, password });
     persistSession(data.session);
     return data;
   },
@@ -69,40 +70,29 @@ export const authService = {
     }
   },
 
-  // Supabase redirige tanto el link de confirmación de correo como el de
-  // "restablecer contraseña" a esta misma app con
-  // `#access_token=...&refresh_token=...&type=signup|recovery` en el
-  // fragmento — el router hash-based no reconoce eso como ruta y cae en
-  // /not-found (por eso "no salía nada"). Hay que interceptarlo ANTES de que
-  // arranque el router, y mandar cada `type` a un destino distinto: signup
-  // entra directo al dashboard, recovery va a la pantalla de nueva contraseña.
-  handleAuthRedirect() {
-    const hash = window.location.hash.startsWith("#") ? window.location.hash.slice(1) : window.location.hash;
-    if (!hash.includes("access_token=")) return { handled: false };
-
-    const params = new URLSearchParams(hash);
-    const access_token = params.get("access_token");
-    const refresh_token = params.get("refresh_token");
-    const type = params.get("type"); // "signup" | "recovery" | "email_change" | ...
-    if (!access_token) return { handled: false };
-
-    persistSession({ access_token, refresh_token });
-    const target = type === "recovery" ? "/reset-password" : "/dashboard";
-    window.history.replaceState(null, "", window.location.pathname + window.location.search + `#${target}`);
-    return { handled: true, type };
+  /** Olvidé mi contraseña: usuario + código → sesión nueva y código nuevo. */
+  async recover(username, recoveryCode, password) {
+    const data = await request("recover", { username, recovery_code: recoveryCode, password });
+    persistSession(data.session);
+    return data;
   },
 
-  async requestPasswordReset(email) {
-    return request("forgot-password", { email });
+  /** Usuario con el que se entra (null en cuentas creadas con correo que aún no lo eligieron). */
+  username() {
+    return store.state.session?.user?.user_metadata?.username || null;
   },
 
-  async resetPassword(password) {
+  /** Cuentas creadas con correo, antes de pasar a usuarios. */
+  needsUsername() {
+    return Boolean(store.state.session?.user) && !this.username();
+  },
+
+  /** Refleja en la sesión guardada el usuario recién elegido. */
+  setUsername(username) {
     const session = store.state.session;
-    if (!session?.access_token || !session?.refresh_token) {
-      throw new Error("El link de recuperación expiró — pedí uno nuevo.");
-    }
-    await request("reset-password", { access_token: session.access_token, refresh_token: session.refresh_token, password });
-    persistSession(null); // fuerza a loguearse de nuevo ya con la contraseña nueva
+    if (!session?.user) return;
+    const user_metadata = { ...session.user.user_metadata, username };
+    persistSession({ ...session, user: { ...session.user, user_metadata } });
   },
 
   restoreSession() {

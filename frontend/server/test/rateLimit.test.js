@@ -10,8 +10,8 @@ test("userKey cae a la IP si no hay usuario", () => {
   assert.equal(userKey({ ip: "1.1.1.1" }), "ip:1.1.1.1");
 });
 
-test("authKey combina IP y correo normalizado", () => {
-  assert.equal(authKey({ ip: "1.1.1.1", body: { email: " Ana@Correo.co " } }), "auth:1.1.1.1:ana@correo.co");
+test("authKey combina IP y usuario normalizado", () => {
+  assert.equal(authKey({ ip: "1.1.1.1", body: { username: " Ana.Perez " } }), "auth:1.1.1.1:ana.perez");
   assert.equal(authKey({ ip: "1.1.1.1", body: {} }), "auth:1.1.1.1:");
 });
 

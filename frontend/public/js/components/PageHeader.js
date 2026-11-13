@@ -6,6 +6,9 @@ import { authService } from "../services/auth.js";
 import { api } from "../services/api.js";
 import { navigate } from "../router.js";
 import { showToast } from "./Toast.js";
+import { Button } from "./Button.js";
+import { promptPassword, showRecoveryCode } from "./RecoveryCode.js";
+import { openDialog } from "./Confirm.js";
 
 async function handleLogoutClick() {
   const ok = await confirmAction({
@@ -44,13 +47,36 @@ async function handleDeleteAccountClick() {
   }
 }
 
+async function handleNewRecoveryCode() {
+  const result = await promptPassword((password) => api.post("/auth/recovery-code", { password }));
+  if (!result) return;
+  await showRecoveryCode(result.recovery_code, { username: authService.username() });
+}
+
+/** Menú "Tu cuenta": código de recuperación y eliminar cuenta. */
+function handleAccountClick() {
+  const username = authService.username();
+  let close;
+  const then = (fn) => () => (close(), fn());
+  const card = h("div", { class: "confirm-card glass-strong glass-in" }, [
+    h("h3", { class: "confirm-card__title" }, "Tu cuenta"),
+    username ? h("p", { class: "confirm-card__message", style: "margin-bottom:var(--space-4)" }, ["Usuario: ", h("strong", {}, username)]) : null,
+    h("div", { class: "flex", style: "flex-direction:column;gap:var(--space-2)" }, [
+      Button({ label: "Nuevo código de recuperación", variant: "secondary", fullWidth: true, onClick: then(handleNewRecoveryCode) }),
+      Button({ label: "Eliminar cuenta", variant: "danger", fullWidth: true, onClick: then(handleDeleteAccountClick) }),
+      Button({ label: "Cerrar", variant: "ghost", fullWidth: true, onClick: close }),
+    ]),
+  ]);
+  close = openDialog(card, { dismissable: true, onDismiss: () => close() });
+}
+
 export function PageHeader({ eyebrow, title, pillLabel, onBellClick }) {
   return h("header", { class: "page-header" }, [
     h("div", {}, [h("p", { class: "page-header__eyebrow" }, eyebrow), h("h1", { class: "page-header__title" }, title)]),
     h("div", { class: "flex items-center gap-3" }, [
       pillLabel ? Pill({ label: pillLabel }) : null,
       IconButton({ iconName: "bell", dot: true, onClick: onBellClick, ariaLabel: "Notificaciones" }),
-      IconButton({ iconName: "user", onClick: handleDeleteAccountClick, ariaLabel: "Eliminar cuenta" }),
+      IconButton({ iconName: "user", onClick: handleAccountClick, ariaLabel: "Tu cuenta" }),
       IconButton({ iconName: "x", onClick: handleLogoutClick, ariaLabel: "Cerrar sesión" }),
     ]),
   ]);

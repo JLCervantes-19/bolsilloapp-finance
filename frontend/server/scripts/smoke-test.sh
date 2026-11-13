@@ -6,7 +6,7 @@ set -euo pipefail
 BASE="${1:?Uso: smoke-test.sh <url-base>}"
 API="$BASE/api"
 H='content-type: application/json'
-EMAIL="smoke-$(date +%s)@example.com"
+USR="smoke-$(date +%s)"
 PASS="Smoke$(date +%s)!"
 
 fail() { echo "FALLÓ: $1"; exit 1; }
@@ -16,12 +16,36 @@ code() { curl -s -o /dev/null -w '%{http_code}' "$@"; }
 
 # Los cuerpos JSON van en variables: el bash 3.2 de macOS parte mal las
 # comillas escapadas anidadas dentro de "$(...)".
-SIGNUP="{\"email\":\"$EMAIL\",\"password\":\"$PASS\",\"full_name\":\"Smoke\",\"accepted_privacy\":true}"
-TOK=$(curl -s -X POST "$API/auth/signup" -H "$H" -d "$SIGNUP" | json "d['data']['session']['access_token']")
+SIGNUP="{\"username\":\"$USR\",\"password\":\"$PASS\",\"full_name\":\"Smoke\",\"accepted_privacy\":true}"
+OUT=$(curl -s -X POST "$API/auth/signup" -H "$H" -d "$SIGNUP")
+TOK=$(echo "$OUT" | json "d['data']['session']['access_token']")
+RCODE=$(echo "$OUT" | json "d['data']['recovery_code']")
 A="Authorization: Bearer $TOK"
 # Siempre borra el usuario temporal, también si una verificación falla
 # (exit no dispara el trap ERR). Si ya se borró, responde 401 y no pasa nada.
 trap 'curl -s -o /dev/null -X DELETE "$API/auth/account" -H "$A" || true' EXIT
+
+# Cuentas sin correo: entrar con usuario y recuperar con el código.
+LOGIN="{\"username\":\"$USR\",\"password\":\"$PASS\"}"
+expect "login con usuario" "$(code -X POST "$API/auth/login" -H "$H" -d "$LOGIN")" 200
+PASS2="Nueva$(date +%s)!"
+BAD="{\"username\":\"$USR\",\"recovery_code\":\"AAAA-BBBB-CCCC\",\"password\":\"$PASS2\"}"
+expect "recuperar con código malo" "$(code -X POST "$API/auth/recover" -H "$H" -d "$BAD")" 400
+RECOVER="{\"username\":\"$USR\",\"recovery_code\":\"$RCODE\",\"password\":\"$PASS2\"}"
+OUT=$(curl -s -X POST "$API/auth/recover" -H "$H" -d "$RECOVER")
+TOK=$(echo "$OUT" | json "d['data']['session']['access_token']")
+RCODE2=$(echo "$OUT" | json "d['data']['recovery_code']")
+A="Authorization: Bearer $TOK"
+[ "$RCODE2" != "$RCODE" ] || fail "el código no se renovó"
+echo "ok  recuperar con código"
+expect "código usado ya no sirve" "$(code -X POST "$API/auth/recover" -H "$H" -d "$RECOVER")" 400
+expect "login con contraseña vieja" "$(code -X POST "$API/auth/login" -H "$H" -d "$LOGIN")" 401
+LOGIN2="{\"username\":\"$USR\",\"password\":\"$PASS2\"}"
+expect "login con contraseña nueva" "$(code -X POST "$API/auth/login" -H "$H" -d "$LOGIN2")" 200
+expect "código nuevo con contraseña mala" "$(code -X POST "$API/auth/recovery-code" -H "$A" -H "$H" -d '{"password":"mala"}')" 400
+expect "código nuevo" "$(code -X POST "$API/auth/recovery-code" -H "$A" -H "$H" -d "{\"password\":\"$PASS2\"}")" 200
+# Sin token, una ruta inexistente responde 401 (la API exige sesión antes del 404).
+expect "forgot-password eliminado" "$(code -X POST "$API/auth/forgot-password" -H "$A" -H "$H" -d '{}')" 404
 
 for p in /dashboard/summary /analytics/monthly /categories /settings /debts/strategy /goals /alerts /pockets /pockets/consolidated /movements; do
   expect "GET $p" "$(code "$API$p" -H "$A")" 200

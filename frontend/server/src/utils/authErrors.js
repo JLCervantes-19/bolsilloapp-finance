@@ -6,13 +6,12 @@
  * inglés crudo al usuario.
  */
 const KNOWN_ERRORS = [
-  [/user already registered/i, "Ya existe una cuenta con ese correo. Iniciá sesión en vez de registrarte."],
-  [/invalid login credentials/i, "Correo o contraseña incorrectos."],
-  [/email not confirmed/i, "Todavía no confirmaste tu correo — revisá tu bandeja de entrada."],
+  [/user already registered|already been registered|email_exists/i, "Ese usuario ya existe. Elegí otro o iniciá sesión."],
+  [/invalid login credentials/i, "Usuario o contraseña incorrectos."],
   [/password should be at least/i, "La contraseña no cumple con los requisitos mínimos."],
   [/password is known to be weak|easy to guess|pwned/i, "Esa contraseña es muy común o insegura — elegí otra."],
   [/rate limit|too many requests/i, "Demasiados intentos. Esperá un momento y volvé a intentar."],
-  [/invalid email/i, "Ese correo no es válido."],
+  [/invalid email|email address .* invalid/i, "Ese usuario no es válido."],
   [/signups? not allowed|disabled/i, "El registro de nuevas cuentas está deshabilitado por ahora."],
   [/refresh token/i, "Tu sesión expiró — iniciá sesión de nuevo."],
   [/same password|different from the old/i, "La nueva contraseña debe ser distinta a la anterior."],

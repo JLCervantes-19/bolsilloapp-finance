@@ -905,6 +905,58 @@
   font-size: var(--fs-sm);
   font-weight: var(--fw-semibold);
 }
+.auth-hint {
+  color: var(--text-secondary);
+  font-size: var(--fs-xs);
+  margin: -8px 0 var(--space-4);
+}
+
+/* Código de recuperación (cuentas sin correo) */
+.recovery-card {
+  max-width: 380px;
+}
+.recovery-card__alert {
+  font-size: var(--fs-sm);
+  line-height: var(--lh-base);
+  color: var(--text-primary);
+  background: var(--warning-tint);
+  border: 1px solid var(--warning);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  margin: var(--space-3) 0;
+}
+.recovery-card__code {
+  font: var(--fw-extrabold) var(--fs-2xl) / 1.2 var(--font-primary);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.08em;
+  text-align: center;
+  color: var(--text-primary);
+  background: var(--glass-fill-pressed);
+  border: 1px dashed var(--glass-border-strong);
+  border-radius: var(--radius-sm);
+  padding: var(--space-4) 8px;
+  margin: var(--space-3) 0 var(--space-4);
+  user-select: all;
+}
+.recovery-card__actions {
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
+}
+.recovery-card__actions .btn {
+  white-space: nowrap;
+}
+.recovery-card__check {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  font-size: var(--fs-sm);
+  color: var(--text-secondary);
+  margin-bottom: var(--space-4);
+  cursor: pointer;
+}
+
 .auth-error {
   color: var(--negative);
   font-size: var(--fs-xs);

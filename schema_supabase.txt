@@ -607,3 +607,11 @@ grant execute on function public.add_auto_investment(numeric) to authenticated;
 --     (ya incluidas en los archivos de arriba).
 --   Reversión: supabase/rollback/2026-11-13-bolsillos-down.sql
 -- ============================================================================
+
+-- ============================================================================
+-- CUENTAS SIN CORREO (2026-11-13) — usuario + contraseña + código de
+-- recuperación. SQL en supabase/migrations/20261113_recuperacion_cuentas.sql:
+--   tabla recuperacion_cuentas (user_id, username único, code_hash scrypt),
+--   RLS activo sin políticas (solo service role). El correo de auth.users es
+--   interno: <usuario>@usuarios.onemillionapp.vercel.app (nunca recibe correos).
+-- ============================================================================

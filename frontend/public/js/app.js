@@ -11,13 +11,14 @@ import { PocketForm } from "./components/PocketForm.js";
 import { QuickAddForm, clearCategoryCache } from "./pages/QuickAddForm.js";
 import { renderHome } from "./pages/Home.js";
 import { renderLogin } from "./pages/Login.js";
-import { renderResetPassword } from "./pages/ResetPassword.js";
 import { renderGastos, renderIngresos } from "./pages/Gastos.js";
 import { renderDeudas } from "./pages/Deudas.js";
 import { renderAhorros } from "./pages/Ahorros.js";
 import { renderAnalitica } from "./pages/Analitica.js";
 import { renderMovimientos, renderInversion, renderRetiros } from "./pages/Movimientos.js";
 import { showToast } from "./components/Toast.js";
+import { promptUsername, showRecoveryCode } from "./components/RecoveryCode.js";
+import { api } from "./services/api.js";
 import { ALL, activePocket, defaultPocket, isAll, loadPockets, pocketForForms, setActivePocket } from "./services/pocketState.js";
 import { store } from "./store/store.js";
 
@@ -92,12 +93,37 @@ function AppShell(pageEl, activeRoute) {
   return h("div", { class: "app-shell", style: `--pocket-color:${color}` }, [h("div", { class: "pocket-strip", "aria-hidden": "true" }), content, BottomNav({ activeRoute, onFabClick: openQuickAdd })]);
 }
 
+// Cuentas creadas con correo (antes de quitar los correos): eligen usuario
+// y reciben su código de recuperación antes de seguir usando la app.
+let claiming = null;
+function ensureUsername() {
+  if (!authService.needsUsername()) return Promise.resolve();
+  claiming ??= promptUsername((value) => api.post("/auth/claim-username", { username: value.trim().toLowerCase() }), {
+    onLogout: async () => {
+      await authService.logout();
+      navigate("/login");
+    },
+  })
+    .then(async (result) => {
+      if (!result) return; // cerró sesión o venció: ya se mandó al login
+      authService.setUsername(result.username);
+      // null = ya lo había elegido en otro dispositivo (su código ya se mostró allá).
+      if (result.recovery_code) await showRecoveryCode(result.recovery_code, { username: result.username });
+    })
+    .finally(() => {
+      claiming = null;
+    });
+  return claiming;
+}
+
 function guardedRoute(renderFn) {
   return async (ctx) => {
     if (!authService.isAuthenticated()) {
       navigate("/login");
       return;
     }
+    await ensureUsername();
+    if (!authService.isAuthenticated()) return;
     try {
       await loadPockets();
     } catch (err) {
@@ -119,11 +145,6 @@ function guardedRoute(renderFn) {
 registerRoute("/login", async () => {
   clear(root);
   root.appendChild(renderLogin({ onSuccess: () => navigate("/dashboard") }));
-});
-
-registerRoute("/reset-password", async () => {
-  clear(root);
-  root.appendChild(renderResetPassword({ onSuccess: () => navigate("/login") }));
 });
 
 registerRoute("/dashboard", guardedRoute(renderHome));
@@ -178,10 +199,6 @@ window.addEventListener("resize", () => {
   }, 150);
 });
 
-const authRedirect = authService.handleAuthRedirect();
-if (!authRedirect.handled) authService.restoreSession();
+authService.restoreSession();
 startRouter();
-if (authRedirect.handled && authRedirect.type !== "recovery") {
-  showToast("¡Correo confirmado! Ya iniciaste sesión.");
-}
 

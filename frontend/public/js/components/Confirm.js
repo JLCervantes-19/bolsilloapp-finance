@@ -9,13 +9,26 @@ import { Button } from "./Button.js";
  *
  * Uso: `if (!(await confirmAction({ title, message }))) return;`
  */
+/**
+ * Monta `card` en un overlay sobre <body> y devuelve `close()`. Con
+ * `dismissable`, tocar afuera llama a `onDismiss`.
+ */
+export function openDialog(card, { dismissable = false, onDismiss } = {}) {
+  const overlay = h("div", { class: "confirm-overlay" }, [card]);
+  if (dismissable) overlay.addEventListener("click", (e) => e.target === overlay && onDismiss?.());
+  document.body.appendChild(overlay);
+  requestAnimationFrame(() => overlay.classList.add("confirm-overlay--open"));
+  return () => {
+    overlay.classList.remove("confirm-overlay--open");
+    setTimeout(() => overlay.remove(), 200);
+  };
+}
+
 export function confirmAction({ title = "¿Estás seguro?", message = "", confirmLabel = "Confirmar", cancelLabel = "Cancelar", danger = false } = {}) {
   return new Promise((resolve) => {
-    let overlay;
-
+    let closeDialog;
     const close = (result) => {
-      overlay.classList.remove("confirm-overlay--open");
-      setTimeout(() => overlay.remove(), 200);
+      closeDialog();
       resolve(result);
     };
 
@@ -32,13 +45,6 @@ export function confirmAction({ title = "¿Estás seguro?", message = "", confir
       ]
     );
 
-    overlay = h(
-      "div",
-      { class: "confirm-overlay", onClick: (e) => (e.target === overlay ? close(false) : null) },
-      [card]
-    );
-
-    document.body.appendChild(overlay);
-    requestAnimationFrame(() => overlay.classList.add("confirm-overlay--open"));
+    closeDialog = openDialog(card, { dismissable: true, onDismiss: () => close(false) });
   });
 }
