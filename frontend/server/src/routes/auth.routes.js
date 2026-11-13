@@ -27,7 +27,7 @@ const signupSchema = z.object({
   email: z.string().email("Ingresá un correo válido"),
   password: passwordSchema,
   full_name: z.string().min(1).max(120).optional(),
-  accepted_privacy: z.literal(true, { errorMap: () => ({ message: "Debés aceptar la política de tratamiento de datos" }) }),
+  accepted_privacy: z.literal(true, { error: "Debés aceptar la política de tratamiento de datos" }),
 });
 
 const loginSchema = z.object({
