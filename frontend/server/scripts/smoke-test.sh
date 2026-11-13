@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Prueba de humo contra un entorno real. Crea un usuario temporal, ejercita
 # los flujos de dinero y lo elimina al final con DELETE /api/auth/account.
-# Uso: scripts/smoke-test.sh http://localhost:3001   |   scripts/smoke-test.sh https://bolsilloapp.vercel.app
+# Uso: scripts/smoke-test.sh http://localhost:3001   |   scripts/smoke-test.sh https://onemillionapp.vercel.app
 set -euo pipefail
 BASE="${1:?Uso: smoke-test.sh <url-base>}"
 API="$BASE/api"
