@@ -10,7 +10,26 @@ class ApiError extends Error {
   }
 }
 
-async function request(method, path, body) {
+// Una sola renovación a la vez: si el dashboard dispara 2 requests en
+// paralelo y ambos reciben 401, comparten el mismo refresh (Supabase rota
+// el refresh_token y reusarlo dos veces fallaría).
+let refreshing = null;
+
+function refreshSession() {
+  const refreshToken = store.state.session?.refresh_token;
+  if (!refreshToken) return Promise.resolve(false);
+  if (!refreshing) {
+    refreshing = authService
+      .refresh(refreshToken)
+      .then(() => true, () => false)
+      .finally(() => {
+        refreshing = null;
+      });
+  }
+  return refreshing;
+}
+
+async function request(method, path, body, retried = false) {
   const session = store.state.session;
   const res = await fetch(`${API_BASE_URL}${path}`, {
     method,
@@ -22,6 +41,7 @@ async function request(method, path, body) {
   });
 
   if (res.status === 401) {
+    if (!retried && (await refreshSession())) return request(method, path, body, true);
     authService.logout();
     window.location.hash = "#/login";
     throw new ApiError(401, "Sesión expirada");

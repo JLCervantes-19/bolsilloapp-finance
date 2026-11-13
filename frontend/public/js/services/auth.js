@@ -33,6 +33,12 @@ export const authService = {
     return data;
   },
 
+  async refresh(refreshToken) {
+    const data = await request("refresh", { refresh_token: refreshToken });
+    persistSession(data.session);
+    return data.session;
+  },
+
   async logout() {
     const session = store.state.session;
     persistSession(null);
