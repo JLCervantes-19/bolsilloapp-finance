@@ -10,7 +10,7 @@ class ApiError extends Error {
   }
 }
 
-const STORAGE_KEY = "bolsillo.session";
+const STORAGE_KEY = "onemillion.session";
 
 // Una sola renovación a la vez: si el dashboard dispara 2 requests en
 // paralelo y ambos reciben 401, comparten el mismo refresh (Supabase rota

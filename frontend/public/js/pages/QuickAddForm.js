@@ -316,7 +316,7 @@ export function QuickAddForm({ pocketId, mode = "expense", onDone }) {
     const detail = isTransfer()
       ? state.mode === "aporte"
         ? `${cp ? cp.icon + " " + cp.name : "Dinero externo"} → ${p.icon} ${p.name}`
-        : `${p.icon} ${p.name} → ${cp ? cp.icon + " " + cp.name : "fuera de Bolsillo"}`
+        : `${p.icon} ${p.name} → ${cp ? cp.icon + " " + cp.name : "fuera de One Million"}`
       : `${p.icon} ${p.name}${categoryName ? " · " + categoryName : ""}`;
 
     const ok = await confirmAction({ title: `¿Registrar ${kindLabel.toLowerCase()}?`, message: `${fmtMoney(amount, p.currency)} · ${detail}`, confirmLabel: "Registrar" });

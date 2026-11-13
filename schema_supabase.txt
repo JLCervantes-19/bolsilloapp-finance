@@ -1,5 +1,5 @@
 -- ============================================================================
--- BOLSILLO — Sistema saldo.
+-- ONE MILLION — Sistema saldo.
 -- Schema PostgreSQL para Supabase — Fase 1 (Base de datos)
 -- Tablas en español (renombradas — ver migración rename_tables_to_spanish).
 -- Ejecutar de punta a punta en el SQL Editor de Supabase (un solo statement run).

@@ -1,7 +1,17 @@
 import { API_BASE_URL } from "./config.js";
 import { store } from "../store/store.js";
 
-const STORAGE_KEY = "bolsillo.session";
+const STORAGE_KEY = "onemillion.session";
+
+// Migración del nombre anterior (Bolsillo): conserva la sesión y la
+// preferencia del sidebar de quienes ya usaban la app.
+for (const k of ["session", "sidebarCollapsed"]) {
+  try {
+    const old = localStorage.getItem(`bolsillo.${k}`);
+    if (old !== null && localStorage.getItem(`onemillion.${k}`) === null) localStorage.setItem(`onemillion.${k}`, old);
+    localStorage.removeItem(`bolsillo.${k}`);
+  } catch {}
+}
 
 async function request(path, body) {
   const res = await fetch(`${API_BASE_URL}/auth/${path}`, {

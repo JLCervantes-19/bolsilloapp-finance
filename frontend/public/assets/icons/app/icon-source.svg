@@ -1,4 +1,7 @@
 <svg width="1024" height="1024" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+  <!-- One Million — ícono de la app. Monograma "1M" dibujado con trazos
+       (no depende de fuentes) + moneda de acento, que es el punto del
+       logotipo "One Million.". Todo cabe en la zona segura maskable (80%). -->
   <defs>
     <radialGradient id="bloomA" cx="20%" cy="15%" r="65%">
       <stop offset="0%" stop-color="#3a2f7a" stop-opacity="0.9"/>
@@ -9,8 +12,12 @@
       <stop offset="100%" stop-color="#0ea894" stop-opacity="0"/>
     </radialGradient>
     <linearGradient id="glass" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.22"/>
-      <stop offset="100%" stop-color="#ffffff" stop-opacity="0.06"/>
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.20"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0.05"/>
+    </linearGradient>
+    <linearGradient id="ink" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#dfe3ee"/>
     </linearGradient>
     <linearGradient id="coin" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" stop-color="#ffb18c"/>
@@ -23,21 +30,16 @@
   <rect width="1024" height="1024" fill="url(#bloomA)"/>
   <rect width="1024" height="1024" fill="url(#bloomB)"/>
 
-  <!-- tarjeta de vidrio central -->
-  <rect x="212" y="292" width="600" height="460" rx="88"
-        fill="url(#glass)" stroke="#ffffff" stroke-opacity="0.35" stroke-width="6"/>
+  <!-- tarjeta de vidrio -->
+  <rect x="172" y="252" width="680" height="520" rx="96"
+        fill="url(#glass)" stroke="#ffffff" stroke-opacity="0.30" stroke-width="5"/>
 
-  <!-- solapa del bolsillo -->
-  <path d="M 212 460 Q 512 380 812 460" fill="none"
-        stroke="#f5f6fa" stroke-opacity="0.55" stroke-width="12" stroke-linecap="round"/>
+  <!-- monograma 1M -->
+  <g fill="none" stroke="url(#ink)" stroke-width="74" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M 252 410 L 312 358 L 312 664"/>
+    <path d="M 404 664 L 404 358 L 548 548 L 692 358 L 692 664"/>
+  </g>
 
-  <!-- moneda / acento (el punto de "bolsillo.") -->
-  <circle cx="700" cy="470" r="92" fill="url(#coin)"/>
-  <circle cx="700" cy="470" r="92" fill="none" stroke="#0c0d14" stroke-opacity="0.25" stroke-width="4"/>
-  <path d="M 700 428 v 84 M 674 448 h 52 a 22 22 0 0 1 0 44 h -52"
-        fill="none" stroke="#0c0d14" stroke-width="14" stroke-linecap="round" stroke-linejoin="round" opacity="0.75"/>
-
-  <!-- letra b, monograma -->
-  <text x="392" y="640" font-family="Helvetica Neue, Helvetica, Arial, sans-serif"
-        font-weight="800" font-size="360" fill="#f5f6fa">b</text>
+  <!-- moneda de acento (el punto de "One Million.") -->
+  <circle cx="782" cy="652" r="46" fill="url(#coin)"/>
 </svg>

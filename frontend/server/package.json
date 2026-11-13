@@ -1,7 +1,7 @@
 {
-  "name": "bolsillo-backend",
+  "name": "onemillion-backend",
   "version": "1.0.0",
-  "description": "Bolsillo — API backend (Node 24 + Express 5, Clean Architecture, Supabase Postgres)",
+  "description": "One Million — API backend (Node 24 + Express 5, Clean Architecture, Supabase Postgres)",
   "type": "module",
   "engines": {
     "node": ">=20"

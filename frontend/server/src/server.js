@@ -4,5 +4,5 @@ import { env } from "./config/env.js";
 const app = createApp();
 
 app.listen(env.port, () => {
-  console.log(`bolsillo-backend escuchando en http://localhost:${env.port} (${env.nodeEnv})`);
+  console.log(`onemillion-backend escuchando en http://localhost:${env.port} (${env.nodeEnv})`);
 });

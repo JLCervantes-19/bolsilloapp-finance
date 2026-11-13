@@ -1,7 +1,7 @@
 {
-  "name": "bolsillo-frontend",
+  "name": "onemillion-frontend",
   "version": "1.0.0",
-  "description": "Bolsillo — SPA Vanilla JS + Tailwind v4 (Liquid Glass) + api/ serverless (envuelve ../backend/src/app.js) para Vercel.",
+  "description": "One Million — SPA Vanilla JS + Tailwind v4 (Liquid Glass) + api/ serverless (envuelve ../backend/src/app.js) para Vercel.",
   "type": "module",
   "scripts": {
     "dev:css": "tailwindcss -i ./public/assets/css/main.css -o ./public/assets/css/build.css --watch",

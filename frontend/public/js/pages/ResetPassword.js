@@ -19,7 +19,7 @@ export function renderResetPassword({ onSuccess }) {
   if (!hasRecoverySession) {
     return h("div", { class: "auth-screen" }, [
       h("div", { class: "auth-card glass-strong glass-in" }, [
-        h("div", { class: "auth-brand" }, [h("span", {}, "bolsillo"), h("span", { class: "sidebar__brand-dot" }, ".")]),
+        h("div", { class: "auth-brand" }, [h("span", {}, "One Million"), h("span", { class: "sidebar__brand-dot" }, ".")]),
         h("p", { class: "auth-tagline" }, "Este link de recuperación ya no es válido"),
         h("p", { style: "color:var(--text-secondary);font-size:var(--fs-sm);margin:0 0 var(--space-4)" }, "Pedí uno nuevo desde la pantalla de inicio de sesión."),
         Button({ label: "Ir a iniciar sesión", fullWidth: true, onClick: () => onSuccess?.() }),
@@ -92,7 +92,7 @@ export function renderResetPassword({ onSuccess }) {
 
   return h("div", { class: "auth-screen" }, [
     h("div", { class: "auth-card glass-strong glass-in" }, [
-      h("div", { class: "auth-brand" }, [h("span", {}, "bolsillo"), h("span", { class: "sidebar__brand-dot" }, ".")]),
+      h("div", { class: "auth-brand" }, [h("span", {}, "One Million"), h("span", { class: "sidebar__brand-dot" }, ".")]),
       h("p", { class: "auth-tagline" }, "Elegí tu nueva contraseña"),
       form,
     ]),

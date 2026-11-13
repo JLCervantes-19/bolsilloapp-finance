@@ -28,8 +28,8 @@ export function MovementRow(m, { showPocket = false, onClick, delay = 0 } = {}) 
     const other = pocketName(m.contraparte_bolsillo_id);
     const here = pocketName(m.bolsillo_id);
     if (neutral) parts.push(`${TIPO_LABEL[m.tipo]} · ${m.direccion === "salida" ? `${here} → ${other}` : `${other} → ${here}`}`);
-    else if (m.direccion === "entrada") parts.push(`${TIPO_LABEL[m.tipo]} · desde ${other || "fuera de Bolsillo"}`);
-    else parts.push(`${TIPO_LABEL[m.tipo]} · hacia ${other || "fuera de Bolsillo"}`);
+    else if (m.direccion === "entrada") parts.push(`${TIPO_LABEL[m.tipo]} · desde ${other || "fuera de One Million"}`);
+    else parts.push(`${TIPO_LABEL[m.tipo]} · hacia ${other || "fuera de One Million"}`);
   } else {
     parts.push(m.categoria_nombre || "Sin categoría");
   }

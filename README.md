@@ -1,4 +1,4 @@
-# bolsillo.
+# One Million.
 
 Asistente financiero personal — Node 24 + Express 5 (Clean Architecture) sobre
 Supabase Postgres con RLS, frontend Vanilla JS + Tailwind v4 con sistema de

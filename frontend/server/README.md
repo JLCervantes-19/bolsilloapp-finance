@@ -1,6 +1,6 @@
-# bolsillo-backend
+# onemillion-backend
 
-API REST para **bolsillo.** — Node 24 + Express 5, Clean Architecture
+API REST para **One Million** — Node 24 + Express 5, Clean Architecture
 (routes → controllers → services → repositories), sobre el proyecto
 Supabase `bolsillo-app` (`tsjzybxgaeltxhnkqpry`).
 

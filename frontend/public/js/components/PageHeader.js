@@ -10,7 +10,7 @@ import { showToast } from "./Toast.js";
 async function handleLogoutClick() {
   const ok = await confirmAction({
     title: "¿Cerrar sesión?",
-    message: "Vas a salir de tu cuenta de Bolsillo.",
+    message: "Vas a salir de tu cuenta de One Million.",
     confirmLabel: "Cerrar sesión",
     danger: true,
   });

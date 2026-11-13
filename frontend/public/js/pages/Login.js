@@ -138,7 +138,7 @@ export function renderLogin({ onSuccess }) {
 
   return h("div", { class: "auth-screen" }, [
     h("div", { class: "auth-card glass-strong glass-in" }, [
-      h("div", { class: "auth-brand" }, [h("span", {}, "bolsillo"), h("span", { class: "sidebar__brand-dot" }, ".")]),
+      h("div", { class: "auth-brand" }, [h("span", {}, "One Million"), h("span", { class: "sidebar__brand-dot" }, ".")]),
       h("p", { class: "auth-tagline" }, "Simplicidad para tu bolsillo"),
       form,
     ]),

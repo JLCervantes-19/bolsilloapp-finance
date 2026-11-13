@@ -9,7 +9,7 @@ const PERSONAL_LINKS = [
   { label: "Analítica", icon: "pie", route: "#/analitica" },
 ];
 
-const COLLAPSE_KEY = "bolsillo.sidebarCollapsed";
+const COLLAPSE_KEY = "onemillion.sidebarCollapsed";
 export const isSidebarCollapsed = () => {
   try {
     return localStorage.getItem(COLLAPSE_KEY) === "1";
@@ -29,7 +29,7 @@ export function Sidebar({ activeRoute, onAddClick, onAddPocket, onEditPocket, on
 
   const aside = h("aside", { class: `sidebar glass${collapsed ? " sidebar--collapsed" : ""}` }, [
     h("div", { class: "sidebar__top" }, [
-      collapsed ? null : h("div", { class: "sidebar__brand" }, [h("span", {}, "bolsillo"), h("span", { class: "sidebar__brand-dot" }, ".")]),
+      collapsed ? null : h("div", { class: "sidebar__brand" }, [h("span", {}, "One Million"), h("span", { class: "sidebar__brand-dot" }, ".")]),
       h("button", {
         type: "button",
         class: "sidebar__collapse",
