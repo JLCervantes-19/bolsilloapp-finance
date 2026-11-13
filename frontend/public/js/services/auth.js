@@ -21,8 +21,8 @@ function persistSession(session) {
 }
 
 export const authService = {
-  async signup(email, password, fullName) {
-    const data = await request("signup", { email, password, full_name: fullName });
+  async signup(email, password, fullName, acceptedPrivacy) {
+    const data = await request("signup", { email, password, full_name: fullName, accepted_privacy: acceptedPrivacy });
     if (data.session) persistSession(data.session);
     return data;
   },
@@ -37,6 +37,19 @@ export const authService = {
     const data = await request("refresh", { refresh_token: refreshToken });
     persistSession(data.session);
     return data.session;
+  },
+
+  async deleteAccount() {
+    const session = store.state.session;
+    const res = await fetch(`${API_BASE_URL}/auth/account`, {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${session?.access_token}` },
+    });
+    if (!res.ok && res.status !== 204) {
+      const json = await res.json().catch(() => ({}));
+      throw new Error(json.error?.message || "No se pudo eliminar la cuenta");
+    }
+    persistSession(null);
   },
 
   async logout() {

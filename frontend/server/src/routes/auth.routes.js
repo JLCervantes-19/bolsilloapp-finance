@@ -6,6 +6,7 @@ import { ApiError } from "../utils/ApiError.js";
 import { supabaseAdmin, supabaseAnon as anonClient, createAuthSessionClient } from "../config/supabase.js";
 import { translateAuthError } from "../utils/authErrors.js";
 import { env } from "../config/env.js";
+import { requireAuth } from "../middlewares/auth.middleware.js";
 
 /**
  * Capa delgada sobre Supabase Auth — el backend no gestiona contraseñas ni
@@ -26,6 +27,7 @@ const signupSchema = z.object({
   email: z.string().email("Ingresá un correo válido"),
   password: passwordSchema,
   full_name: z.string().min(1).max(120).optional(),
+  accepted_privacy: z.literal(true, { errorMap: () => ({ message: "Debés aceptar la política de tratamiento de datos" }) }),
 });
 
 const loginSchema = z.object({
@@ -49,7 +51,7 @@ authRouter.post(
       email,
       password,
       email_confirm: true,
-      user_metadata: { full_name },
+      user_metadata: { full_name, privacy_accepted_at: new Date().toISOString() },
     });
     if (createError) throw ApiError.badRequest(translateAuthError(createError.message));
 
@@ -122,6 +124,18 @@ authRouter.post(
     const header = req.headers.authorization || "";
     const [, token] = header.split(" ");
     if (token) await supabaseAdmin.auth.admin.signOut(token).catch(() => {});
+    res.status(204).send();
+  })
+);
+
+// Supresión de datos (Ley 1581): borra el usuario de Auth; el cascade de
+// las FK elimina todas sus filas en public.*.
+authRouter.delete(
+  "/account",
+  requireAuth,
+  asyncHandler(async (req, res) => {
+    const { error } = await supabaseAdmin.auth.admin.deleteUser(req.user.id);
+    if (error) throw ApiError.internal("No se pudo eliminar la cuenta. Intentá de nuevo.");
     res.status(204).send();
   })
 );

@@ -24,6 +24,17 @@ export function renderLogin({ onSuccess }) {
   const errorEl = h("p", { class: "auth-error" });
   const nameLabel = h("p", { class: "field-label", style: "display:none" }, "Nombre");
   const passwordLabel = h("p", { class: "field-label" }, "Contraseña");
+  const privacyCheck = h("input", { type: "checkbox", id: "accept-privacy" });
+  const privacyRow = h("label", { for: "accept-privacy", class: "field-label", style: "display:none;gap:8px;align-items:flex-start;text-transform:none" }, [
+    privacyCheck,
+    h("span", {}, [
+      "Acepto la ",
+      h("a", { href: "./privacidad.html", target: "_blank", rel: "noopener" }, "política de tratamiento de datos"),
+      " y los ",
+      h("a", { href: "./terminos.html", target: "_blank", rel: "noopener" }, "términos de uso"),
+      ".",
+    ]),
+  ]);
 
   passwordField.addEventListener("input", () => passwordRules.update(passwordField.value));
 
@@ -32,6 +43,8 @@ export function renderLogin({ onSuccess }) {
     nameField.style.display = mode === "signup" ? "block" : "none";
     if (mode !== "signup") nameField.value = ""; // que no quede pegado el nombre si se vuelve a "Crear cuenta"
     passwordRules.el.style.display = mode === "signup" ? "flex" : "none";
+    privacyRow.style.display = mode === "signup" ? "flex" : "none";
+    privacyCheck.checked = false;
     passwordLabel.style.display = mode === "forgot" ? "none" : "block";
     passwordField.style.display = mode === "forgot" ? "none" : "block";
     passwordField.value = "";
@@ -62,6 +75,11 @@ export function renderLogin({ onSuccess }) {
         e.preventDefault();
         clear(errorEl);
 
+        if (mode === "signup" && !privacyCheck.checked) {
+          errorEl.textContent = "Para crear la cuenta tenés que aceptar la política de tratamiento de datos.";
+          return;
+        }
+
         if (mode === "signup" && !passwordMeetsPolicy(passwordField.value)) {
           errorEl.textContent = "Completá los requisitos de la contraseña marcados abajo.";
           passwordField.focus();
@@ -80,7 +98,7 @@ export function renderLogin({ onSuccess }) {
             return;
           }
           if (mode === "signup") {
-            const data = await authService.signup(emailField.value, passwordField.value, nameField.value);
+            const data = await authService.signup(emailField.value, passwordField.value, nameField.value, privacyCheck.checked);
             if (!data.session) {
               showToast("Cuenta creada — revisá tu correo para confirmar");
               mode = "login";
@@ -108,6 +126,7 @@ export function renderLogin({ onSuccess }) {
       passwordLabel,
       passwordField,
       passwordRules.el,
+      privacyRow,
       errorEl,
       submitBtn,
       forgotBtn,
