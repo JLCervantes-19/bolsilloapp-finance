@@ -16,6 +16,7 @@ import { investmentsRouter } from "./investments.routes.js";
 import { settingsRouter } from "./settings.routes.js";
 import { transactionsRouter } from "./transactions.routes.js";
 import { auditLogsRouter } from "./auditLogs.routes.js";
+import { movementsRouter, pocketsRouter, transfersRouter } from "./pockets.routes.js";
 
 export const apiRouter = Router();
 
@@ -37,3 +38,6 @@ apiRouter.use("/investments", investmentsRouter);
 apiRouter.use("/settings", settingsRouter);
 apiRouter.use("/transactions", transactionsRouter);
 apiRouter.use("/audit-logs", auditLogsRouter);
+apiRouter.use("/pockets", pocketsRouter);
+apiRouter.use("/transfers", transfersRouter);
+apiRouter.use("/movements", movementsRouter);

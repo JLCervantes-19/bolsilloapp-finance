@@ -28,6 +28,9 @@ export const store = createStore({
   dashboard: null,
   analytics: null,
   categories: [],
+  pockets: [], // bolsillos con `metrics` (saldo y totales del mes) — ver services/pocketState.js
+  pocketsUserId: null,
+  activePocketId: null, // uuid de un bolsillo o "all" (Todo / Consolidado)
   debts: [],
   goals: [],
   toast: null,

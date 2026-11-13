@@ -19,14 +19,15 @@ import { computeAvailableBalance } from "./dashboard.service.js";
  * ahorro, inversión y deuda se asumen constantes hacia atrás porque no hay
  * histórico de esas tablas tampoco.
  */
-export async function getMonthlySeries(supabase, months = 6) {
+export async function getMonthlySeries(supabase, months = 6, { bolsillo } = {}) {
+  const scope = { bolsillo };
   const ranges = lastMonthsRanges(months);
 
   const perMonth = await Promise.all(
     ranges.map(async (r) => {
       const [expenses, income] = await Promise.all([
-        expensesRepository.listByDateRange(supabase, r.start, r.end),
-        incomesRepository.sumByDateRange(supabase, r.start, r.end),
+        expensesRepository.listByDateRange(supabase, r.start, r.end, scope),
+        incomesRepository.sumByDateRange(supabase, r.start, r.end, scope),
       ]);
       const fixed = expenses.filter((e) => e.is_fixed).reduce((s, e) => s + Number(e.amount), 0);
       const variable = expenses.filter((e) => !e.is_fixed).reduce((s, e) => s + Number(e.amount), 0);
@@ -43,7 +44,7 @@ export async function getMonthlySeries(supabase, months = 6) {
   const totalSavings = goals.reduce((s, g) => s + Number(g.current_amount), 0);
   const totalInvestments = investments.reduce((s, i) => s + Number(i.current_value), 0);
 
-  const balance = await computeAvailableBalance(supabase);
+  const balance = await computeAvailableBalance(supabase, scope);
 
   const currentNetWorth = computeNetWorth({ balance, totalSavings, totalInvestments, totalDebts });
 

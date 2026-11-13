@@ -1,6 +1,7 @@
 import { expensesRepository } from "../repositories/expenses.repository.js";
 import { incomesRepository } from "../repositories/incomes.repository.js";
 import { goalsRepository } from "../repositories/goals.repository.js";
+import { pocketsRepository } from "../repositories/pockets.repository.js";
 import { toApiError } from "../utils/dbError.js";
 
 /**
@@ -11,9 +12,11 @@ import { toApiError } from "../utils/dbError.js";
  * /api/dashboard/summary — no hay caché de por medio.
  */
 
-export async function registerQuickExpense(supabase, userId, { category_id, amount, description, date }) {
+export async function registerQuickExpense(supabase, userId, { bolsillo_id, category_id, amount, description, date, payment_method }) {
   return expensesRepository.create(supabase, userId, {
+    bolsillo_id,
     category_id,
+    payment_method,
     amount,
     description: description || "Gasto rápido",
     date,
@@ -23,10 +26,23 @@ export async function registerQuickExpense(supabase, userId, { category_id, amou
 export async function registerQuickIncome(
   supabase,
   userId,
-  { category_id, amount, description, date, allocate_emergency_fund_pct = 0, allocate_investment_pct = 0 }
+  { bolsillo_id, category_id, amount, description, date, payment_method, allocate_emergency_fund_pct = 0, allocate_investment_pct = 0 }
 ) {
+  // Fondo de emergencia e inversiones son herramientas del bolsillo personal
+  // predeterminado (su saldo es el que baja al apartar): la asignación
+  // automática solo aplica a ingresos que entran ahí.
+  if (bolsillo_id) {
+    const pocket = await pocketsRepository.getById(supabase, bolsillo_id);
+    if (!pocket.is_default) {
+      allocate_emergency_fund_pct = 0;
+      allocate_investment_pct = 0;
+    }
+  }
+
   const income = await incomesRepository.create(supabase, userId, {
+    bolsillo_id,
     category_id,
+    payment_method,
     amount,
     description: description || "Ingreso rápido",
     date,

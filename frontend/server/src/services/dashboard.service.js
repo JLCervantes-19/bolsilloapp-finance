@@ -7,6 +7,7 @@ import { currentMonthRange, previousMonthRange } from "../utils/dateRange.js";
 import { computeHealthScore, computeNetWorth } from "./engines/financialEngine.js";
 import { buildRecommendations } from "./engines/recommendationEngine.js";
 import { toApiError } from "../utils/dbError.js";
+import { pocketBalance } from "./pockets.service.js";
 
 /**
  * Balance disponible = todo el dinero que ha entrado menos todo lo que ha
@@ -15,15 +16,26 @@ import { toApiError } from "../utils/dbError.js";
  *   ingresos históricos − gastos históricos − ahorro apartado − invertido
  * en vez de ser un número editable a mano.
  */
-export async function computeAvailableBalance(supabase) {
+export async function computeAvailableBalance(supabase, { bolsillo } = {}) {
+  // Con bolsillo: su saldo sale del cálculo central (bolsillos_resumen). Para
+  // el personal predeterminado es exactamente la fórmula de abajo restringida
+  // a sus movimientos (ahorro e inversión se descuentan de él).
+  if (bolsillo) return pocketBalance(supabase, bolsillo);
   const { data, error } = await supabase.rpc("get_balance_totals");
   if (error) throw toApiError(error);
   return Number(data.total_income) - Number(data.total_expenses) - Number(data.total_saved) - Number(data.total_invested);
 }
 
-export async function getDashboardSummary(supabase) {
+/**
+ * `bolsillo` (opcional) limita saldo, ingresos, gastos y categorías a ese
+ * bolsillo. Deudas, metas e inversiones son herramientas personales: se
+ * incluyen siempre (el frontend usa este resumen para el bolsillo personal
+ * predeterminado). Sin `bolsillo` se comporta como antes (todo el usuario).
+ */
+export async function getDashboardSummary(supabase, { bolsillo } = {}) {
   const currentRange = currentMonthRange();
   const previousRange = previousMonthRange();
+  const scope = { bolsillo };
 
   const [
     balance,
@@ -36,15 +48,15 @@ export async function getDashboardSummary(supabase) {
     currentExpenses,
     previousExpenses,
   ] = await Promise.all([
-    computeAvailableBalance(supabase),
-    incomesRepository.sumByDateRange(supabase, currentRange.start, currentRange.end),
-    expensesRepository.sumByDateRange(supabase, currentRange.start, currentRange.end),
-    expensesRepository.sumByDateRange(supabase, previousRange.start, previousRange.end),
+    computeAvailableBalance(supabase, scope),
+    incomesRepository.sumByDateRange(supabase, currentRange.start, currentRange.end, scope),
+    expensesRepository.sumByDateRange(supabase, currentRange.start, currentRange.end, scope),
+    expensesRepository.sumByDateRange(supabase, previousRange.start, previousRange.end, scope),
     debtsRepository.list(supabase, { filters: { status: "active" } }),
     goalsRepository.list(supabase),
     investmentsRepository.list(supabase),
-    expensesRepository.listByDateRange(supabase, currentRange.start, currentRange.end),
-    expensesRepository.listByDateRange(supabase, previousRange.start, previousRange.end),
+    expensesRepository.listByDateRange(supabase, currentRange.start, currentRange.end, scope),
+    expensesRepository.listByDateRange(supabase, previousRange.start, previousRange.end, scope),
   ]);
 
   const totalDebts = debts.reduce((s, d) => s + Number(d.balance), 0);

@@ -12,8 +12,10 @@ export const categoriesRepository = {
   // `deleted_at` es borrado lógico (ver migración add_soft_delete_to_categorias):
   // las categorías eliminadas dejan de listarse/filtrarse pero la fila sigue
   // existiendo para que ingresos/gastos ya clasificados conserven nombre/color.
-  async list(supabase, opts = {}) {
-    const rows = await base.list(supabase, opts);
+  // Las categorías son por bolsillo (columna bolsillo_id): `bolsillo` filtra
+  // a las de uno; sin él vienen todas (cada una dice a qué bolsillo pertenece).
+  async list(supabase, { bolsillo, ...opts } = {}) {
+    const rows = await base.list(supabase, { ...opts, filters: { ...(opts.filters || {}), bolsillo_id: bolsillo } });
     return rows.filter((c) => !c.deleted_at);
   },
 
@@ -29,13 +31,21 @@ export const categoriesRepository = {
   // las eliminadas (deleted_at) a propósito: cuentan para el límite de 3 y
   // su nombre queda retirado — no se puede recrear una categoría con el
   // mismo nombre que una que el usuario ya borró.
+  // El tope de 3 personalizadas y el nombre único son por bolsillo. Sin
+  // bolsillo_id la categoría va al personal predeterminado (como antes).
   async create(supabase, userId, payload) {
-    const { data: existing, error } = await supabase.from("categorias").select("name, kind, is_default");
+    let bolsilloId = payload.bolsillo_id;
+    if (!bolsilloId) {
+      const { data: def, error: defError } = await supabase.from("bolsillos").select("id").eq("is_default", true).maybeSingle();
+      if (defError) throw toApiError(defError);
+      bolsilloId = def?.id;
+    }
+    const { data: existing, error } = await supabase.from("categorias").select("name, kind, is_default").eq("bolsillo_id", bolsilloId);
     if (error) throw toApiError(error);
 
     const customCount = existing.filter((c) => !c.is_default).length;
     if (customCount >= MAX_CUSTOM_CATEGORIES) {
-      throw ApiError.badRequest(`Ya tienes el máximo de ${MAX_CUSTOM_CATEGORIES} categorías personalizadas.`);
+      throw ApiError.badRequest(`Ya tienes el máximo de ${MAX_CUSTOM_CATEGORIES} categorías personalizadas en este bolsillo.`);
     }
 
     const nameTaken = existing.some((c) => c.kind === payload.kind && normalizeName(c.name) === normalizeName(payload.name));
@@ -43,7 +53,7 @@ export const categoriesRepository = {
       throw ApiError.badRequest("Ya existe (o existió) una categoría con ese nombre.");
     }
 
-    return base.create(supabase, userId, { ...payload, is_default: false });
+    return base.create(supabase, userId, { ...payload, bolsillo_id: bolsilloId, is_default: false });
   },
 
   // Borrado lógico: nunca se borra la fila (para no romper el historial de

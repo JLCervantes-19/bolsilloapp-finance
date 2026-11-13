@@ -4,6 +4,11 @@ export function fmt(amount) {
   return "$" + Math.round(Number(amount) || 0).toLocaleString("es-CO");
 }
 
+/** Monto con su moneda: COP como siempre ("$1.000"); otras monedas llevan el código. */
+export function fmtMoney(amount, currency = "COP") {
+  return currency && currency !== "COP" ? `${fmt(amount)} ${currency}` : fmt(amount);
+}
+
 export function fmtSigned(amount) {
   const n = Number(amount) || 0;
   return (n < 0 ? "-" : "+") + fmt(Math.abs(n));

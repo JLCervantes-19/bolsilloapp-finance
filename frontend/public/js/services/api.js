@@ -48,7 +48,7 @@ function refreshSession(failedToken) {
   return refreshing;
 }
 
-async function request(method, path, body, retried = false) {
+async function request(method, path, body, retried = false, raw = false) {
   const session = store.state.session;
   const res = await fetch(`${API_BASE_URL}${path}`, {
     method,
@@ -61,7 +61,7 @@ async function request(method, path, body, retried = false) {
 
   if (res.status === 401) {
     const result = retried ? "expired" : await refreshSession(session?.access_token);
-    if (result === "ok") return request(method, path, body, true);
+    if (result === "ok") return request(method, path, body, true, raw);
     if (result === "error") throw new ApiError(503, "No se pudo renovar la sesión. Revisá tu conexión e intentá de nuevo.");
     authService.logout();
     window.location.hash = "#/login";
@@ -72,12 +72,14 @@ async function request(method, path, body, retried = false) {
 
   const json = await res.json().catch(() => ({}));
   if (!res.ok) throw new ApiError(res.status, json.error?.message || "Error de red", json.error?.details);
-  return json.data;
+  return raw ? json : json.data;
 }
 
 export const api = {
   get: (path) => request("GET", path),
   post: (path, body) => request("POST", path, body),
   patch: (path, body) => request("PATCH", path, body),
-  delete: (path) => request("DELETE", path),
+  delete: (path, body) => request("DELETE", path, body),
+  // Respuesta completa (no solo `data`), para listados paginados.
+  getRaw: (path) => request("GET", path, undefined, false, true),
 };

@@ -1,4 +1,4 @@
-import { h, clear } from "../utils/dom.js";
+import { h, clear, append } from "../utils/dom.js";
 import { financialService } from "../services/financialService.js";
 import { store } from "../store/store.js";
 import { fmt, firstName } from "../utils/formatters.js";
@@ -22,14 +22,14 @@ function greeting() {
   return name ? `${base}, ${name}` : base;
 }
 
-function barConfig(labels, income, expense) {
+export function barConfig(labels, income, expense, names = { income: "Ingresos", expense: "Gastos" }) {
   return {
     type: "bar",
     data: {
       labels,
       datasets: [
-        { label: "Ingresos", data: income, backgroundColor: chartTheme.positive, borderRadius: 6, maxBarThickness: 18 },
-        { label: "Gastos", data: expense, backgroundColor: chartTheme.negative, borderRadius: 6, maxBarThickness: 18 },
+        { label: names.income, data: income, backgroundColor: chartTheme.positive, borderRadius: 6, maxBarThickness: 18 },
+        { label: names.expense, data: expense, backgroundColor: chartTheme.negative, borderRadius: 6, maxBarThickness: 18 },
       ],
     },
     options: {
@@ -48,7 +48,7 @@ function barConfig(labels, income, expense) {
   };
 }
 
-function donutConfig(categories) {
+export function donutConfig(categories) {
   return {
     type: "doughnut",
     data: {
@@ -65,14 +65,14 @@ function donutConfig(categories) {
   };
 }
 
-function lineConfig(labels, networth) {
+export function lineConfig(labels, networth, label = "Patrimonio") {
   return {
     type: "line",
     data: {
       labels,
       datasets: [
         {
-          label: "Patrimonio",
+          label,
           data: networth,
           borderColor: chartTheme.lineColor,
           backgroundColor: (ctx) => {
@@ -111,7 +111,10 @@ function lineConfig(labels, networth) {
  * renders por cada refresh sucesivo mientras el usuario seguía en el
  * dashboard).
  */
-export async function renderDashboard(pageEl) {
+export async function renderDashboard(pageEl, { pocket } = {}) {
+  // Resumen del bolsillo personal predeterminado: saldo, ingresos y gastos
+  // solo de ese bolsillo; deudas, ahorro e inversiones son personales.
+  const bolsillo = pocket?.id;
   let charts = {};
   let lastValues = null; // valores numéricos del render anterior — null = primera carga
 
@@ -123,7 +126,7 @@ export async function renderDashboard(pageEl) {
   async function draw() {
     let summary, series;
     try {
-      [summary, series] = await Promise.all([financialService.getDashboardSummary(), financialService.getMonthlySeries(6)]);
+      [summary, series] = await Promise.all([financialService.getDashboardSummary(bolsillo), financialService.getMonthlySeries(6, bolsillo)]);
     } catch (err) {
       clear(pageEl);
       pageEl.appendChild(h("p", { style: "color:var(--text-secondary)" }, `No se pudo cargar el dashboard: ${err.message}`));
@@ -189,7 +192,7 @@ export async function renderDashboard(pageEl) {
     ];
 
     clear(pageEl);
-    pageEl.append(
+    append(pageEl, 
       PageHeader({ eyebrow: greeting(), title: "Tu resumen", pillLabel: monthTitleCase }),
 
       SectionTitle({ label: "Resumen del mes", meta: "10 indicadores" }),

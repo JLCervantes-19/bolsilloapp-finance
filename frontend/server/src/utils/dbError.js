@@ -17,7 +17,15 @@ export function toApiError(error) {
       return new ApiError(409, UNIQUE_MESSAGES[constraint] || "Ya existe un registro igual.");
     }
     case "23503":
-      return ApiError.badRequest("La categoría o meta seleccionada no es válida.");
+      // Los triggers propios (assert_owned_refs, assert_transfer_refs) lanzan
+      // 23503 con un mensaje en español; los de FK de Postgres vienen en inglés.
+      return ApiError.badRequest(
+        /violates|foreign key/i.test(error.message || "") || !error.message
+          ? "La categoría, meta o bolsillo seleccionado no es válido."
+          : error.message
+      );
+    case "22003":
+      return ApiError.badRequest("El monto es demasiado grande.");
     case "22P02":
       return ApiError.badRequest("Identificador o valor con formato inválido.");
     case "23514":

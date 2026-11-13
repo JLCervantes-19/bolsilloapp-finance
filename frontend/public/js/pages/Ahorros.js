@@ -1,5 +1,6 @@
 import { h, clear } from "../utils/dom.js";
 import { financialService } from "../services/financialService.js";
+import { defaultPocket } from "../services/pocketState.js";
 import { fmt } from "../utils/formatters.js";
 import { PageHeader } from "../components/PageHeader.js";
 import { ProgressBar } from "../components/ProgressBar.js";
@@ -46,7 +47,7 @@ export async function renderAhorros(pageEl) {
 
   async function refresh() {
     setTimeout(() => sheet.close(), 400);
-    [goals, dashboard] = await Promise.all([financialService.listGoals(), financialService.getDashboardSummary()]);
+    [goals, dashboard] = await Promise.all([financialService.listGoals(), financialService.getDashboardSummary(defaultPocket()?.id)]);
     renderGoals();
   }
 

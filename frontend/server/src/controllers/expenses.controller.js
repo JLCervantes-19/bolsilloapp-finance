@@ -2,14 +2,16 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { expensesRepository } from "../repositories/expenses.repository.js";
 import { currentMonthRange } from "../utils/dateRange.js";
 import { ApiError } from "../utils/ApiError.js";
-import { dateRangeQuerySchema } from "../validators/index.js";
+import { dateRangeQuerySchema, pocketQuerySchema } from "../validators/index.js";
 
 export const expensesController = {
   list: asyncHandler(async (req, res) => {
     const q = dateRangeQuerySchema.safeParse(req.query);
     if (!q.success) throw ApiError.badRequest("Rango de fechas inválido (formato YYYY-MM-DD)");
+    const pq = pocketQuerySchema.safeParse({ bolsillo: req.query.bolsillo });
+    if (!pq.success) throw ApiError.badRequest("Bolsillo inválido");
     const { start, end } = q.data.start && q.data.end ? q.data : currentMonthRange();
-    const data = await expensesRepository.listByDateRange(req.supabase, start, end);
+    const data = await expensesRepository.listByDateRange(req.supabase, start, end, { bolsillo: pq.data.bolsillo });
     res.json({ data, range: { start, end } });
   }),
 

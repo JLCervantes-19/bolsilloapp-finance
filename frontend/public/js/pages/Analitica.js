@@ -1,5 +1,6 @@
 import { h, clear } from "../utils/dom.js";
 import { financialService } from "../services/financialService.js";
+import { defaultPocket } from "../services/pocketState.js";
 import { fmt } from "../utils/formatters.js";
 import { PageHeader } from "../components/PageHeader.js";
 import { chartTheme } from "../utils/chartTheme.js";
@@ -26,7 +27,7 @@ export async function renderAnalitica(pageEl) {
   async function draw() {
     let summary, series;
     try {
-      [summary, series] = await Promise.all([financialService.getDashboardSummary(), financialService.getMonthlySeries(6)]);
+      [summary, series] = await Promise.all([financialService.getDashboardSummary(defaultPocket()?.id), financialService.getMonthlySeries(6, defaultPocket()?.id)]);
     } catch (err) {
       clear(pageEl);
       pageEl.appendChild(h("p", { style: "color:var(--text-secondary)" }, `No se pudo cargar analítica: ${err.message}`));

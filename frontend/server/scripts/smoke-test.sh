@@ -23,7 +23,7 @@ A="Authorization: Bearer $TOK"
 # (exit no dispara el trap ERR). Si ya se borró, responde 401 y no pasa nada.
 trap 'curl -s -o /dev/null -X DELETE "$API/auth/account" -H "$A" || true' EXIT
 
-for p in /dashboard/summary /analytics/monthly /categories /settings /debts/strategy /goals /alerts; do
+for p in /dashboard/summary /analytics/monthly /categories /settings /debts/strategy /goals /alerts /pockets /pockets/consolidated /movements; do
   expect "GET $p" "$(code "$API$p" -H "$A")" 200
 done
 
@@ -41,6 +41,22 @@ expect "ingreso con asignaciones" "$(code -X POST "$API/transactions/quick-incom
 
 # 100000 ingreso − 1000 gasto − (5000 + 10000) en meta − 5000 invertido = 79000
 expect "saldo disponible" "$(curl -s "$API/dashboard/summary" -H "$A" | json "int(d['data']['balance'])")" 79000
+
+# Bolsillos: un negocio con su venta y un retiro al personal. El retiro mueve
+# saldos pero no es ingreso ni gasto en el consolidado.
+POCKET=$(curl -s "$API/pockets" -H "$A" | json "d['data'][0]['id']")
+NEG=$(curl -s -X POST "$API/pockets" -H "$A" -H "$H" -d '{"name":"Smoke negocio","kind":"business","initial_balance":1000}' | json "d['data']['id']")
+VCAT=$(curl -s "$API/categories?bolsillo=$NEG" -H "$A" | json "[c['id'] for c in d['data'] if c['kind']=='income'][0]")
+VENTA="{\"bolsillo_id\":\"$NEG\",\"category_id\":\"$VCAT\",\"amount\":5000}"
+RETIRO="{\"kind\":\"retiro\",\"from_bolsillo_id\":\"$NEG\",\"to_bolsillo_id\":\"$POCKET\",\"amount\":2000}"
+MISMO="{\"kind\":\"traslado\",\"from_bolsillo_id\":\"$NEG\",\"to_bolsillo_id\":\"$NEG\",\"amount\":1}"
+expect "venta en negocio" "$(code -X POST "$API/transactions/quick-income" -H "$A" -H "$H" -d "$VENTA")" 201
+expect "retiro enlazado" "$(code -X POST "$API/transfers" -H "$A" -H "$H" -d "$RETIRO")" 201
+expect "traslado a sí mismo" "$(code -X POST "$API/transfers" -H "$A" -H "$H" -d "$MISMO")" 400
+# 100000 + 5000 de ingresos globales; el retiro de 2000 no suma
+expect "ingresos consolidados" "$(curl -s "$API/pockets/consolidated" -H "$A" | json "int(d['data']['ingresosPeriodo'])")" 105000
+# negocio: 1000 inicial + 5000 venta − 2000 retiro
+expect "saldo del negocio" "$(curl -s "$API/pockets" -H "$A" | json "int([p for p in d['data'] if p['id']=='$NEG'][0]['metrics']['saldo'])")" 4000
 
 expect "categoría ajena" "$(code -X POST "$API/expenses" -H "$A" -H "$H" -d '{"category_id":"00000000-0000-4000-8000-000000000000","amount":10}')" 400
 expect "id inválido" "$(code "$API/goals/no-es-uuid" -H "$A")" 400

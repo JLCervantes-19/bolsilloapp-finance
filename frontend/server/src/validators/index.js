@@ -5,13 +5,20 @@ const amount = () => z.number().positive();
 const isoDate = () => z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Fecha esperada en formato YYYY-MM-DD");
 
 export const categorySchema = z.object({
-  name: z.string().min(1).max(60),
+  bolsillo_id: uuid().optional(),
+  name: z.string().trim().min(1).max(60),
   color: z.string().min(3).max(20),
   kind: z.enum(["income", "expense"]),
 });
 
+// `bolsillo_id` opcional en todo lo que registra dinero: si no viene, la base
+// usa el bolsillo personal predeterminado (trigger assert_owned_refs).
+const paymentMethod = () => z.string().trim().max(60).optional();
+
 export const incomeSchema = z.object({
+  bolsillo_id: uuid().optional(),
   category_id: uuid().nullable().optional(),
+  payment_method: paymentMethod(),
   amount: amount(),
   description: z.string().max(280).optional(),
   source: z.string().max(120).optional(),
@@ -20,10 +27,11 @@ export const incomeSchema = z.object({
 });
 
 export const expenseSchema = z.object({
+  bolsillo_id: uuid().optional(),
   category_id: uuid().nullable().optional(),
   amount: amount(),
   description: z.string().max(280).optional(),
-  payment_method: z.string().max(60).optional(),
+  payment_method: paymentMethod(),
   tags: z.array(z.string().max(40)).max(20).optional(),
   is_fixed: z.boolean().optional(),
   date: isoDate().optional(),
@@ -102,17 +110,102 @@ export const dateRangeQuerySchema = z.object({
   end: isoDate().optional(),
 });
 
+// ?bolsillo=<uuid> filtra por un bolsillo; sin parámetro = todos (comportamiento previo).
+export const pocketQuerySchema = z.object({
+  bolsillo: uuid().optional(),
+});
+
+// ---------------------------------------------------------------------------
+// Bolsillos y transferencias
+// ---------------------------------------------------------------------------
+const hexColor = () => z.string().regex(/^#[0-9a-fA-F]{6}$/, "Color esperado en formato #RRGGBB");
+
+export const pocketSchema = z.object({
+  name: z.string().trim().min(1, "Poné un nombre").max(60),
+  kind: z.enum(["personal", "business"]),
+  color: hexColor().optional(),
+  icon: z.string().trim().min(1).max(16).optional(),
+  currency: z.string().trim().toUpperCase().length(3).optional(),
+  initial_balance: z.number().nonnegative().max(1e12).optional(),
+});
+
+// El tipo no se cambia después de crear (romperia aportes/retiros ya registrados).
+export const pocketUpdateSchema = z
+  .object({
+    name: z.string().trim().min(1, "Poné un nombre").max(60),
+    color: hexColor(),
+    icon: z.string().trim().min(1).max(16),
+    currency: z.string().trim().toUpperCase().length(3),
+    position: z.number().int().min(0).max(10000),
+    archived: z.boolean(),
+  })
+  .partial();
+
+export const pocketDeleteSchema = z
+  .object({
+    destino: uuid().optional(),
+    borrar_movimientos: z.boolean().optional(),
+  })
+  .default({});
+
+export const transferSchema = z
+  .object({
+    kind: z.enum(["aporte", "retiro", "traslado"]),
+    from_bolsillo_id: uuid().nullable().optional(),
+    to_bolsillo_id: uuid().nullable().optional(),
+    amount: amount().max(1e12),
+    date: isoDate().optional(),
+    description: z.string().trim().max(280).optional(),
+    payment_method: paymentMethod(),
+  })
+  .superRefine((t, ctx) => {
+    if (t.kind === "aporte" && !t.to_bolsillo_id) ctx.addIssue({ code: "custom", path: ["to_bolsillo_id"], message: "Elegí el negocio que recibe la inversión" });
+    if (t.kind === "retiro" && !t.from_bolsillo_id) ctx.addIssue({ code: "custom", path: ["from_bolsillo_id"], message: "Elegí el negocio del que sale el retiro" });
+    if (t.kind === "traslado" && (!t.from_bolsillo_id || !t.to_bolsillo_id)) {
+      ctx.addIssue({ code: "custom", path: ["to_bolsillo_id"], message: "Elegí bolsillo de origen y de destino" });
+    }
+    if (t.from_bolsillo_id && t.from_bolsillo_id === t.to_bolsillo_id) {
+      ctx.addIssue({ code: "custom", path: ["to_bolsillo_id"], message: "El origen y el destino tienen que ser bolsillos distintos" });
+    }
+  });
+
+// Editar una transferencia: no cambia el tipo ni los extremos (se borra y se crea otra).
+export const transferUpdateSchema = z
+  .object({
+    amount: amount().max(1e12),
+    date: isoDate(),
+    description: z.string().trim().max(280),
+    payment_method: z.string().trim().max(60),
+  })
+  .partial();
+
+export const movementsQuerySchema = z.object({
+  bolsillo: uuid().optional(),
+  tipo: z.enum(["ingreso", "gasto", "aporte", "retiro", "traslado"]).optional(),
+  start: isoDate().optional(),
+  end: isoDate().optional(),
+  categoria: uuid().optional(),
+  metodo: z.string().trim().max(60).optional(),
+  q: z.string().trim().max(80).optional(),
+  page: z.coerce.number().int().min(1).max(10000).default(1),
+  pageSize: z.coerce.number().int().min(1).max(100).default(20),
+});
+
 export const quickExpenseSchema = z.object({
+  bolsillo_id: uuid().optional(),
   category_id: uuid(),
   amount: amount(),
   description: z.string().max(280).optional(),
+  payment_method: paymentMethod(),
   date: isoDate().optional(),
 });
 
 export const quickIncomeSchema = z.object({
+  bolsillo_id: uuid().optional(),
   category_id: uuid(),
   amount: amount(),
   description: z.string().max(280).optional(),
+  payment_method: paymentMethod(),
   date: isoDate().optional(),
   allocate_emergency_fund_pct: z.number().min(0).max(100).optional(),
   allocate_investment_pct: z.number().min(0).max(100).optional(),

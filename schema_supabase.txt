@@ -589,3 +589,21 @@ grant execute on function public.add_auto_investment(numeric) to authenticated;
 -- updated_at + audit_log + alta automática de usuario/configuración/categorías
 -- por defecto al registrarse.
 -- ============================================================================
+
+-- ============================================================================
+-- BOLSILLOS MÚLTIPLES (2026-11-13) — aplicado en producción como migraciones
+-- versionadas; el SQL completo vive en:
+--   supabase/migrations/20261113_bolsillos_core.sql
+--     tabla bolsillos (RLS), bolsillo_id NOT NULL en categorias/ingresos/gastos,
+--     payment_method en ingresos, backfill "Ingresos personales", índices
+--     (user_id, bolsillo_id, date), sembrar_categorias, handle_new_user y
+--     assert_owned_refs actualizados.
+--   supabase/migrations/20261113_bolsillos_transferencias.sql
+--     tabla transferencias (aporte | retiro | traslado, RLS + auditoría),
+--     vista movimientos (security_invoker), bolsillos_resumen (cálculo único
+--     de saldos) y eliminar_bolsillo (mover o borrar movimientos).
+--   Correcciones aplicadas después: fix_assert_owned_refs_categorias,
+--     fix_assert_owned_refs_presupuestos, fix_proteger_bolsillo_predeterminado
+--     (ya incluidas en los archivos de arriba).
+--   Reversión: supabase/rollback/2026-11-13-bolsillos-down.sql
+-- ============================================================================

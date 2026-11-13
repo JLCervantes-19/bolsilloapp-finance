@@ -4,19 +4,20 @@ import { toApiError } from "../utils/dbError.js";
 export const incomesRepository = {
   ...createBaseRepository("ingresos"),
 
-  async listByDateRange(supabase, startDate, endDate) {
-    const { data, error } = await supabase
+  async listByDateRange(supabase, startDate, endDate, { bolsillo } = {}) {
+    let query = supabase
       .from("ingresos")
       .select("*, categorias(id, name, color)")
       .gte("date", startDate)
-      .lte("date", endDate)
-      .order("date", { ascending: false });
+      .lte("date", endDate);
+    if (bolsillo) query = query.eq("bolsillo_id", bolsillo);
+    const { data, error } = await query.order("date", { ascending: false });
     if (error) throw toApiError(error);
     return data;
   },
 
-  async sumByDateRange(supabase, startDate, endDate) {
-    const rows = await this.listByDateRange(supabase, startDate, endDate);
+  async sumByDateRange(supabase, startDate, endDate, opts) {
+    const rows = await this.listByDateRange(supabase, startDate, endDate, opts);
     return rows.reduce((sum, r) => sum + Number(r.amount), 0);
   },
 };

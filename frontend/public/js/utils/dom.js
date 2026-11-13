@@ -30,3 +30,9 @@ export function mount(parent, el) {
   parent.appendChild(el);
   return el;
 }
+
+/** Como Element.append, pero ignora null/false (append nativo los pinta como texto "null"). */
+export function append(parent, ...children) {
+  parent.append(...children.filter((c) => c !== null && c !== undefined && c !== false));
+  return parent;
+}
