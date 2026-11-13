@@ -458,6 +458,42 @@ alter default privileges for role postgres in schema public revoke all on tables
 alter default privileges for role postgres in schema public revoke truncate, references, trigger on tables from authenticated;
 
 -- ============================================================================
+-- 6. INTEGRIDAD ENTRE USUARIOS (migración assert_owned_refs)
+-- ============================================================================
+-- La FK solo comprueba que la categoría/meta exista, no que sea del mismo
+-- usuario. Esto lo exige explícitamente.
+create or replace function public.assert_owned_refs()
+returns trigger
+language plpgsql
+security invoker
+set search_path = public
+as $$
+begin
+  if TG_TABLE_NAME = 'ahorros' then
+    if new.goal_id is not null
+       and not exists (select 1 from metas where id = new.goal_id and user_id = new.user_id) then
+      raise exception 'Meta inválida' using errcode = '23503';
+    end if;
+  elsif new.category_id is not null
+        and not exists (select 1 from categorias where id = new.category_id and user_id = new.user_id) then
+    raise exception 'Categoría inválida' using errcode = '23503';
+  end if;
+  return new;
+end;
+$$;
+
+create trigger gastos_assert_owned_refs before insert or update of category_id, user_id on public.gastos
+  for each row execute function public.assert_owned_refs();
+create trigger ingresos_assert_owned_refs before insert or update of category_id, user_id on public.ingresos
+  for each row execute function public.assert_owned_refs();
+create trigger presupuestos_assert_owned_refs before insert or update of category_id, user_id on public.presupuestos
+  for each row execute function public.assert_owned_refs();
+create trigger ahorros_assert_owned_refs before insert or update of goal_id, user_id on public.ahorros
+  for each row execute function public.assert_owned_refs();
+
+revoke execute on function public.assert_owned_refs() from public, anon;
+
+-- ============================================================================
 -- Fin del schema — 12 tablas (nombres en español), RLS en todas, triggers de
 -- updated_at + audit_log + alta automática de usuario/configuración/categorías
 -- por defecto al registrarse.

@@ -4,6 +4,8 @@ import { compareStrategies } from "../services/engines/debtEngine.js";
 import { computeCapacidadPagoPct, computeDebtToIncomeMonths } from "../services/engines/financialEngine.js";
 import { incomesRepository } from "../repositories/incomes.repository.js";
 import { currentMonthRange } from "../utils/dateRange.js";
+import { ApiError } from "../utils/ApiError.js";
+import { debtStrategyQuerySchema } from "../validators/index.js";
 
 function toEngineDebt(row) {
   return { id: row.id, name: row.name, balance: Number(row.balance), rate: Number(row.interest_rate), minPayment: Number(row.minimum_payment) };
@@ -42,7 +44,9 @@ export const debtsController = {
    * dado, más el ratio deuda/ingreso y la capacidad de pago usada.
    */
   strategy: asyncHandler(async (req, res) => {
-    const extraPayment = Number(req.query.extraPayment) || 0;
+    const q = debtStrategyQuerySchema.safeParse(req.query);
+    if (!q.success) throw ApiError.badRequest("Pago extra inválido");
+    const { extraPayment } = q.data;
     const debts = await debtsRepository.list(req.supabase, { filters: { status: "active" } });
     const engineDebts = debts.map(toEngineDebt);
     const comparison = compareStrategies(engineDebts, extraPayment);

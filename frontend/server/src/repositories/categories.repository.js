@@ -1,5 +1,6 @@
 import { createBaseRepository } from "./base.repository.js";
 import { ApiError } from "../utils/ApiError.js";
+import { toApiError } from "../utils/dbError.js";
 
 const MAX_CUSTOM_CATEGORIES = 3;
 const base = createBaseRepository("categorias");
@@ -18,7 +19,7 @@ export const categoriesRepository = {
 
   async listByKind(supabase, kind) {
     const { data, error } = await supabase.from("categorias").select("*").eq("kind", kind).is("deleted_at", null).order("name");
-    if (error) throw ApiError.badRequest(error.message);
+    if (error) throw toApiError(error);
     return data;
   },
 
@@ -30,7 +31,7 @@ export const categoriesRepository = {
   // mismo nombre que una que el usuario ya borró.
   async create(supabase, userId, payload) {
     const { data: existing, error } = await supabase.from("categorias").select("name, kind, is_default");
-    if (error) throw ApiError.badRequest(error.message);
+    if (error) throw toApiError(error);
 
     const customCount = existing.filter((c) => !c.is_default).length;
     if (customCount >= MAX_CUSTOM_CATEGORIES) {
@@ -56,6 +57,6 @@ export const categoriesRepository = {
       throw ApiError.badRequest("No puedes eliminar una categoría por defecto.");
     }
     const { error } = await supabase.from("categorias").update({ deleted_at: new Date().toISOString() }).eq("id", id);
-    if (error) throw ApiError.badRequest(error.message);
+    if (error) throw toApiError(error);
   },
 };

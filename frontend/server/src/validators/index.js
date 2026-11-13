@@ -89,7 +89,12 @@ export const profileSchema = z.object({
 });
 
 export const debtStrategyQuerySchema = z.object({
-  extraPayment: z.coerce.number().nonnegative().default(0),
+  extraPayment: z.coerce.number().nonnegative().max(1e12).default(0),
+});
+
+export const dateRangeQuerySchema = z.object({
+  start: isoDate().optional(),
+  end: isoDate().optional(),
 });
 
 export const quickExpenseSchema = z.object({

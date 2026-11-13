@@ -1,4 +1,5 @@
 import { ApiError } from "../utils/ApiError.js";
+import { toApiError } from "../utils/dbError.js";
 
 /**
  * Fábrica de repositorio CRUD genérico sobre una tabla Postgres.
@@ -18,14 +19,14 @@ export function createBaseRepository(table) {
       }
       query = query.order(orderBy, { ascending });
       const { data, error } = await query;
-      if (error) throw ApiError.badRequest(error.message);
+      if (error) throw toApiError(error);
       return data;
     },
 
     async getById(supabase, id) {
       const { data, error } = await supabase.from(table).select("*").eq("id", id).maybeSingle();
-      if (error) throw ApiError.badRequest(error.message);
-      if (!data) throw ApiError.notFound(`${table} no encontrado`);
+      if (error) throw toApiError(error);
+      if (!data) throw ApiError.notFound("Registro no encontrado.");
       return data;
     },
 
@@ -35,20 +36,20 @@ export function createBaseRepository(table) {
         .insert({ ...payload, user_id: userId })
         .select()
         .single();
-      if (error) throw ApiError.badRequest(error.message);
+      if (error) throw toApiError(error);
       return data;
     },
 
     async update(supabase, id, payload) {
       const { data, error } = await supabase.from(table).update(payload).eq("id", id).select().maybeSingle();
-      if (error) throw ApiError.badRequest(error.message);
-      if (!data) throw ApiError.notFound(`${table} no encontrado`);
+      if (error) throw toApiError(error);
+      if (!data) throw ApiError.notFound("Registro no encontrado.");
       return data;
     },
 
     async remove(supabase, id) {
       const { error } = await supabase.from(table).delete().eq("id", id);
-      if (error) throw ApiError.badRequest(error.message);
+      if (error) throw toApiError(error);
     },
   };
 }

@@ -1,5 +1,5 @@
 import { createBaseRepository } from "./base.repository.js";
-import { ApiError } from "../utils/ApiError.js";
+import { toApiError } from "../utils/dbError.js";
 
 export const expensesRepository = {
   ...createBaseRepository("gastos"),
@@ -12,7 +12,7 @@ export const expensesRepository = {
       .gte("date", startDate)
       .lte("date", endDate)
       .order("date", { ascending: false });
-    if (error) throw ApiError.badRequest(error.message);
+    if (error) throw toApiError(error);
     return data;
   },
 

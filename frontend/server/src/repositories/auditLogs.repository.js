@@ -1,4 +1,4 @@
-import { ApiError } from "../utils/ApiError.js";
+import { toApiError } from "../utils/dbError.js";
 
 /** Solo lectura — las filas las escribe el trigger log_audit() en Postgres. */
 export const auditLogsRepository = {
@@ -8,7 +8,7 @@ export const auditLogsRepository = {
       .select("*")
       .order("created_at", { ascending: false })
       .limit(limit);
-    if (error) throw ApiError.badRequest(error.message);
+    if (error) throw toApiError(error);
     return data;
   },
 };
