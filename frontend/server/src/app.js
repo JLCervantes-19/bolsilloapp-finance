@@ -4,9 +4,9 @@ import cors from "cors";
 import compression from "compression";
 import morgan from "morgan";
 import cookieParser from "cookie-parser";
-import rateLimit from "express-rate-limit";
 
 import { env } from "./config/env.js";
+import { ipFloodLimiter, authLimiter, refreshLimiter } from "./middlewares/rateLimit.js";
 import { authRouter } from "./routes/auth.routes.js";
 import { apiRouter } from "./routes/index.js";
 import { notFoundMiddleware, errorMiddleware } from "./middlewares/error.middleware.js";
@@ -36,13 +36,13 @@ export function createApp() {
   app.use(express.json({ limit: "1mb" }));
   app.use(express.urlencoded({ extended: true, limit: "1mb" }));
 
-  // Rate limit general — 100 req / 15 min por IP; auth más estricto (10
-  // intentos / 15 min) para frenar fuerza bruta de login.
-  app.use(rateLimit({ windowMs: 15 * 60 * 1000, limit: 100, standardHeaders: true, legacyHeaders: false }));
-  const authLimiter = rateLimit({ windowMs: 15 * 60 * 1000, limit: 10, standardHeaders: true, legacyHeaders: false });
+  // Límites: ver middlewares/rateLimit.js (IP solo anti-inundación; el uso
+  // normal de /api se limita por usuario dentro de apiRouter).
+  app.use(ipFloodLimiter);
 
   app.get("/health", (req, res) => res.json({ status: "ok", env: env.nodeEnv }));
 
+  app.use("/api/auth/refresh", refreshLimiter);
   app.use("/api/auth", authLimiter, authRouter);
   app.use("/api", apiRouter);
 

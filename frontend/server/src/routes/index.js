@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { requireAuth } from "../middlewares/auth.middleware.js";
+import { userLimiter } from "../middlewares/rateLimit.js";
 
 import { dashboardRouter } from "./dashboard.routes.js";
 import { analyticsRouter } from "./analytics.routes.js";
@@ -20,6 +21,7 @@ export const apiRouter = Router();
 
 // Todo /api/* requiere un access_token de Supabase Auth válido.
 apiRouter.use(requireAuth);
+apiRouter.use(userLimiter);
 
 apiRouter.use("/dashboard", dashboardRouter);
 apiRouter.use("/analytics", analyticsRouter);
