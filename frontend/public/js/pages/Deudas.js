@@ -107,7 +107,7 @@ export async function renderDeudas(pageEl) {
             h("p", { style: "margin:0;font-size:13.5px;font-weight:700" }, o.name),
             h("p", { style: "margin:2px 0 0;font-size:11.5px;font-weight:600;color:var(--text-secondary)" }, `${fmt(o.balance)} · ${o.rate > 0 ? o.rate + "% anual" : "Sin interés"}`),
           ]),
-          h("span", { style: `font-size:12px;font-weight:700;color:${o.paidMonth ? "var(--positive)" : "var(--negative)"}` }, o.paidMonth ? `Mes ${o.paidMonth}` : "Sin fin"),
+          h("span", { style: `font-size:12px;font-weight:700;color:${o.paidMonth === null ? "var(--negative)" : "var(--positive)"}` }, o.paidMonth === null ? "Sin fin" : o.paidMonth === 0 ? "Pagada" : `Mes ${o.paidMonth}`),
         ])
       )
     );

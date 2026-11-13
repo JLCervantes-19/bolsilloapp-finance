@@ -21,3 +21,17 @@ test("sin deudas → 0 meses", () => {
   assert.equal(r.months, 0);
   assert.equal(r.paysOff, true);
 });
+
+test("deuda activa ya en 0 se considera pagada (mes 0), no 'sin fin'", () => {
+  const r = simulate(
+    [
+      { id: "a", name: "A", balance: 0, rate: 20, minPayment: 0 },
+      { id: "b", name: "B", balance: 50000, rate: 0, minPayment: 10000 },
+    ],
+    "snowball",
+    0
+  );
+  assert.equal(r.paysOff, true);
+  assert.equal(r.order.find((o) => o.id === "a").paidMonth, 0);
+  assert.equal(r.order.find((o) => o.id === "b").paidMonth, 5);
+});

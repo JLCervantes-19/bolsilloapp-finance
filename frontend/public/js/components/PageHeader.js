@@ -3,6 +3,7 @@ import { Pill } from "./Pill.js";
 import { IconButton } from "./IconButton.js";
 import { confirmAction } from "./Confirm.js";
 import { authService } from "../services/auth.js";
+import { api } from "../services/api.js";
 import { navigate } from "../router.js";
 import { showToast } from "./Toast.js";
 
@@ -34,7 +35,8 @@ async function handleDeleteAccountClick() {
   });
   if (!sure) return;
   try {
-    await authService.deleteAccount();
+    await api.delete("/auth/account");
+    authService.clearSession();
     showToast("Tu cuenta fue eliminada.");
     navigate("/login");
   } catch (err) {

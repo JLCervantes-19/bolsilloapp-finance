@@ -9,8 +9,12 @@ async function request(path, body) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
-  const json = await res.json();
-  if (!res.ok) throw new Error(json.error?.message || "Error de autenticación");
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    const err = new Error(json.error?.message || "Error de autenticación");
+    err.status = res.status;
+    throw err;
+  }
   return json.data;
 }
 
@@ -39,16 +43,8 @@ export const authService = {
     return data.session;
   },
 
-  async deleteAccount() {
-    const session = store.state.session;
-    const res = await fetch(`${API_BASE_URL}/auth/account`, {
-      method: "DELETE",
-      headers: { Authorization: `Bearer ${session?.access_token}` },
-    });
-    if (!res.ok && res.status !== 204) {
-      const json = await res.json().catch(() => ({}));
-      throw new Error(json.error?.message || "No se pudo eliminar la cuenta");
-    }
+  /** Limpia la sesión local sin llamar al backend (la cuenta ya no existe). */
+  clearSession() {
     persistSession(null);
   },
 

@@ -6,7 +6,7 @@ import morgan from "morgan";
 import cookieParser from "cookie-parser";
 
 import { env } from "./config/env.js";
-import { ipFloodLimiter, authLimiter, refreshLimiter } from "./middlewares/rateLimit.js";
+import { ipFloodLimiter, authLimiter, authIpLimiter, refreshLimiter } from "./middlewares/rateLimit.js";
 import { authRouter } from "./routes/auth.routes.js";
 import { apiRouter } from "./routes/index.js";
 import { notFoundMiddleware, errorMiddleware } from "./middlewares/error.middleware.js";
@@ -43,7 +43,7 @@ export function createApp() {
   app.get("/health", (req, res) => res.json({ status: "ok", env: env.nodeEnv }));
 
   app.use("/api/auth/refresh", refreshLimiter);
-  app.use("/api/auth", authLimiter, authRouter);
+  app.use("/api/auth", authIpLimiter, authLimiter, authRouter);
   app.use("/api", apiRouter);
 
   app.use(notFoundMiddleware);

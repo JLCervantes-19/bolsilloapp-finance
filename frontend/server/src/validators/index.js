@@ -92,6 +92,11 @@ export const debtStrategyQuerySchema = z.object({
   extraPayment: z.coerce.number().nonnegative().max(1e12).default(0),
 });
 
+// Cada mes son 2 consultas en paralelo: sin tope, ?months=5000 dispara 10.000.
+export const analyticsQuerySchema = z.object({
+  months: z.coerce.number().int().min(1).max(24).default(6),
+});
+
 export const dateRangeQuerySchema = z.object({
   start: isoDate().optional(),
   end: isoDate().optional(),

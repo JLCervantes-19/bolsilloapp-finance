@@ -3,7 +3,7 @@ import { z } from "zod";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { validateBody } from "../middlewares/validate.middleware.js";
 import { ApiError } from "../utils/ApiError.js";
-import { supabaseAdmin, supabaseAnon as anonClient, createAuthSessionClient } from "../config/supabase.js";
+import { supabaseAdmin, createAuthSessionClient } from "../config/supabase.js";
 import { translateAuthError } from "../utils/authErrors.js";
 import { env } from "../config/env.js";
 import { requireAuth } from "../middlewares/auth.middleware.js";
@@ -44,7 +44,7 @@ authRouter.post(
     const { email, password, full_name } = req.body;
 
     // Se crea con el cliente admin (service role) y `email_confirm: true`
-    // en vez de `anonClient.auth.signUp` — así el usuario queda confirmado
+    // en vez de `auth.signUp` con la anon key — así el usuario queda confirmado
     // de entrada, sin depender del link de confirmación por correo, y se
     // puede loguear inmediatamente después de registrarse.
     const { error: createError } = await supabaseAdmin.auth.admin.createUser({
@@ -55,7 +55,7 @@ authRouter.post(
     });
     if (createError) throw ApiError.badRequest(translateAuthError(createError.message));
 
-    const { data, error } = await anonClient.auth.signInWithPassword({ email, password });
+    const { data, error } = await createAuthSessionClient().auth.signInWithPassword({ email, password });
     if (error) throw ApiError.badRequest(translateAuthError(error.message));
 
     res.status(201).json({ data });
@@ -67,7 +67,7 @@ authRouter.post(
   validateBody(loginSchema),
   asyncHandler(async (req, res) => {
     const { email, password } = req.body;
-    const { data, error } = await anonClient.auth.signInWithPassword({ email, password });
+    const { data, error } = await createAuthSessionClient().auth.signInWithPassword({ email, password });
     if (error) throw ApiError.unauthorized(translateAuthError(error.message));
     res.json({ data });
   })
@@ -77,8 +77,16 @@ authRouter.post(
   "/refresh",
   validateBody(z.object({ refresh_token: z.string() })),
   asyncHandler(async (req, res) => {
-    const { data, error } = await anonClient.auth.refreshSession({ refresh_token: req.body.refresh_token });
-    if (error) throw ApiError.unauthorized(translateAuthError(error.message));
+    const { data, error } = await createAuthSessionClient().auth.refreshSession({ refresh_token: req.body.refresh_token });
+    if (error) {
+      // Solo un refresh_token inválido/vencido es 401 (el frontend manda al
+      // login). Límites de Supabase, caídas o red son temporales: 503, y el
+      // frontend conserva la sesión para reintentar.
+      const temporary = !error.status || error.status === 429 || error.status >= 500;
+      throw temporary
+        ? new ApiError(503, translateAuthError(error.message))
+        : ApiError.unauthorized(translateAuthError(error.message));
+    }
     res.json({ data });
   })
 );
@@ -90,7 +98,7 @@ authRouter.post(
     // Supabase no revela si el correo existe o no (evita enumeración de
     // usuarios) — siempre respondemos el mismo mensaje genérico, incluso si
     // `error` viene poblado por un correo inexistente.
-    await anonClient.auth.resetPasswordForEmail(req.body.email, {
+    await createAuthSessionClient().auth.resetPasswordForEmail(req.body.email, {
       redirectTo: env.frontendUrl,
     });
     res.json({ data: { message: "Si el correo existe, te enviamos un link para restablecer tu contraseña." } });
@@ -135,7 +143,10 @@ authRouter.delete(
   requireAuth,
   asyncHandler(async (req, res) => {
     const { error } = await supabaseAdmin.auth.admin.deleteUser(req.user.id);
-    if (error) throw ApiError.internal("No se pudo eliminar la cuenta. Intentá de nuevo.");
+    if (error) {
+      console.error("[auth] deleteUser", error);
+      throw ApiError.internal("No se pudo eliminar la cuenta. Intentá de nuevo.");
+    }
     res.status(204).send();
   })
 );

@@ -22,18 +22,12 @@ export function createRequestClient(accessToken) {
   });
 }
 
-/** Cliente anon sin token — solo para las rutas de auth (signup/login/refresh). */
-export const supabaseAnon = createClient(env.supabaseUrl, env.supabaseAnonKey, {
-  auth: { persistSession: false, autoRefreshToken: false },
-  realtime: realtimeOptions,
-});
-
 /**
- * Cliente anon nuevo (no el singleton `supabaseAnon`) para operaciones que
- * necesitan `auth.setSession(...)` — como confirmar una nueva contraseña con
- * los tokens del link de recuperación. Si reutilizáramos `supabaseAnon`,
- * `setSession` pisaría su estado interno y dos requests concurrentes de
- * distintos usuarios se pisarían la sesión entre sí.
+ * Cliente anon NUEVO por request para todo lo de Auth (login, refresh,
+ * recuperación). GoTrueClient guarda en memoria la última sesión y
+ * comparte el refresh en curso aunque se le pase otro refresh_token: con
+ * un singleton, dos usuarios que inician sesión o renuevan a la vez en la
+ * misma instancia de Vercel pueden recibir la sesión del otro.
  */
 export function createAuthSessionClient() {
   return createClient(env.supabaseUrl, env.supabaseAnonKey, {

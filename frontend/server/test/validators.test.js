@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { expenseSchema, quickIncomeSchema, goalSchema, dateRangeQuerySchema, debtStrategyQuerySchema } from "../src/validators/index.js";
+import { expenseSchema, quickIncomeSchema, goalSchema, dateRangeQuerySchema, debtStrategyQuerySchema, analyticsQuerySchema } from "../src/validators/index.js";
 
 const UUID = "3f2b8c1e-4a5d-4e6f-9a7b-1c2d3e4f5a6b";
 
@@ -31,4 +31,11 @@ test("query de rango y pago extra", () => {
   assert.equal(dateRangeQuerySchema.safeParse({ start: "x" }).success, false);
   assert.equal(debtStrategyQuerySchema.parse({ extraPayment: "200000" }).extraPayment, 200000);
   assert.equal(debtStrategyQuerySchema.parse({}).extraPayment, 0);
+});
+
+test("months de analítica: 1 a 24, 6 por defecto", () => {
+  assert.equal(analyticsQuerySchema.parse({}).months, 6);
+  assert.equal(analyticsQuerySchema.parse({ months: "12" }).months, 12);
+  assert.equal(analyticsQuerySchema.safeParse({ months: "5000" }).success, false);
+  assert.equal(analyticsQuerySchema.safeParse({ months: "0" }).success, false);
 });

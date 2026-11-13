@@ -10,7 +10,7 @@
  * `debts` = [{ id, name, balance, rate, minPayment }]
  */
 export function simulate(debts, strategy, extraPayment) {
-  let sim = debts.map((d) => ({ ...d, remaining: d.balance, paidMonth: null }));
+  let sim = debts.map((d) => ({ ...d, remaining: d.balance, paidMonth: d.balance <= 0.5 ? 0 : null }));
   const order =
     strategy === "snowball"
       ? [...sim].sort((a, b) => a.balance - b.balance)
