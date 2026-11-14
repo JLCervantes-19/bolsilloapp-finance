@@ -1200,8 +1200,7 @@
 .pocket-row__edit:focus-visible,
 .pocket-panel__more:focus-visible,
 .pocket-panel__add:focus-visible,
-.pocket-tabs__tab:focus-visible,
-.pocket-bar:focus-visible {
+.pocket-tabs__tab:focus-visible {
   outline: 2px solid var(--brand-accent);
   outline-offset: 2px;
 }
@@ -1432,23 +1431,46 @@
   padding: 10px 0;
 }
 
-/* ---------- Móvil: barra del bolsillo actual (abre la hoja) ---------- */
-.pocket-bar-slot {
-  margin-bottom: var(--space-3);
+/* ---------- Móvil: botón del bolsillo actual en la barra inferior ---------- */
+.pocket-nav-slot {
+  display: contents;
 }
-.pocket-bar {
-  --pc: var(--pocket-color);
-  width: 100%;
+.pocket-nav-btn {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  flex: none;
   display: flex;
   align-items: center;
-  gap: var(--space-3);
-  padding: 8px var(--space-3) 8px 8px;
-  border-radius: var(--radius-md);
-  text-align: left;
-  border-left: 3px solid var(--pocket-color);
+  justify-content: center;
+  transition: transform var(--duration-fast) var(--ease-spring);
 }
-.pocket-bar .pocket-row__icon {
+.pocket-nav-btn:active {
+  transform: scale(0.94);
+}
+.pocket-nav-btn:focus-visible {
+  outline: 2px solid var(--pocket-color);
+  outline-offset: 2px;
+}
+.pocket-nav-btn__icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 11px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 17px;
+  line-height: 1;
+  color: var(--text-primary);
   background: color-mix(in srgb, var(--pocket-color) 16%, white);
+  box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--pocket-color) 55%, transparent);
+}
+.bottom-nav__divider {
+  width: 1px;
+  height: 24px;
+  margin: 0 4px;
+  flex: none;
+  background: var(--glass-border-strong);
 }
 
 /* ---------- Pestañas internas del bolsillo ---------- */
@@ -1776,4 +1798,147 @@
   font-size: var(--fs-xs);
   font-weight: var(--fw-semibold);
   color: var(--text-tertiary);
+}
+
+/* ============================================================
+   Optimización para teléfono
+   ============================================================ */
+/* La app ocupa toda la pantalla (viewport-fit=cover + barra de estado
+   translúcida): el contenido arranca debajo de la hora/notch. */
+.app-main {
+  padding-top: calc(var(--space-4) + env(safe-area-inset-top));
+}
+
+/* Encabezado: texto a la izquierda, herramientas agrupadas a la derecha. */
+.page-header {
+  align-items: center;
+}
+.page-header__text {
+  flex: 1;
+  min-width: 0;
+}
+.page-header__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex: none;
+}
+.page-header__tools {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px;
+  border-radius: var(--radius-pill);
+}
+.page-header__tools .icon-btn {
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+.page-header__tools .icon-btn::before {
+  display: none;
+}
+.page-header__tools .icon-btn:active {
+  background: var(--glass-fill-pressed);
+}
+.page-header__period {
+  display: none;
+}
+
+/* Carruseles: overflow-x recorta la sombra de las tarjetas y deja una
+   franja gris de bordes rectos. Se da aire para la sombra y se compensa con
+   margen negativo para que el resto del layout no se mueva. */
+.summary-row {
+  padding: 6px 8px 22px;
+  margin: -6px -8px -14px;
+  scroll-padding-inline: 8px;
+}
+
+/* Recomendaciones: ancho fijo legible; si hay una sola, ocupa la fila. */
+.insight {
+  flex: 0 0 min(300px, 82vw);
+  min-width: 0;
+}
+.insight:only-child {
+  flex-basis: 100%;
+}
+
+@media (max-width: 640px) {
+  .page-header {
+    margin-bottom: var(--space-4);
+  }
+  .page-header__eyebrow {
+    font-size: var(--fs-sm);
+  }
+  .page-header__title {
+    font-size: 28px;
+    line-height: 1.1;
+  }
+  .page-header__period {
+    display: block;
+    margin: 6px 0 0;
+    font-size: var(--fs-sm);
+    font-weight: var(--fw-bold);
+    color: var(--text-secondary);
+  }
+  .page-header__actions .pill {
+    display: none;
+  }
+  .page-header__tools .icon-btn {
+    width: 36px;
+    height: 36px;
+  }
+
+  /* Pestañas del bolsillo: las 4 de un bolsillo personal caben sin cortarse. */
+  .pocket-tabs__tab {
+    padding: 0 var(--space-3);
+  }
+
+  /* Filtros: el texto largo de un select se corta con "…" y no pisa la flecha;
+     el último filtro suelto ocupa la fila completa. */
+  .filters__grid > input[type="search"] ~ :last-child:nth-child(even) {
+    grid-column: 1 / -1;
+  }
+  .select-field {
+    min-width: 0;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;
+  }
+
+  /* Carruseles de borde a borde: la tarjeta se corta en el borde de la
+     pantalla (señal de que se desliza), no a mitad del contenido. */
+  .summary-row {
+    margin-inline: calc(-1 * var(--space-4));
+    padding-inline: var(--space-4);
+    scroll-padding-inline: var(--space-4);
+  }
+}
+
+@media (max-width: 360px) {
+  .page-header__title {
+    font-size: 24px;
+  }
+  .page-header__tools .icon-btn {
+    width: 32px;
+    height: 32px;
+  }
+  .page-header__tools .icon-btn__dot {
+    top: 5px;
+    right: 6px;
+  }
+  .bottom-nav__item,
+  .pocket-nav-btn {
+    width: 40px;
+    height: 40px;
+  }
+  .fab {
+    width: 52px;
+    height: 52px;
+  }
+  .bottom-nav-wrap {
+    gap: var(--space-2);
+  }
 }

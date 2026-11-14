@@ -1,7 +1,7 @@
 import { h, clear } from "../utils/dom.js";
 import { financialService } from "../services/financialService.js";
 import { defaultPocket } from "../services/pocketState.js";
-import { fmt } from "../utils/formatters.js";
+import { fmt, fmtAxis } from "../utils/formatters.js";
 import { PageHeader } from "../components/PageHeader.js";
 import { chartTheme } from "../utils/chartTheme.js";
 
@@ -71,7 +71,7 @@ export async function renderAnalitica(pageEl) {
       },
       options: baseOptions({
         plugins: { legend: { position: "bottom", labels: chartTheme.legendLabels }, tooltip: { callbacks: { label: (ctx) => " " + ctx.dataset.label + ": " + fmt(ctx.raw) } } },
-        scales: { x: { grid: { display: false }, ticks: { color: tickColor } }, y: { grid: { color: gridColor }, ticks: { color: tickColor, callback: (v) => "$" + (v / 1000000).toFixed(1) + "M" } } },
+        scales: { x: { grid: { display: false }, ticks: { color: tickColor } }, y: { beginAtZero: true, suggestedMax: 100000, grid: { color: gridColor }, ticks: { color: tickColor, callback: fmtAxis, maxTicksLimit: 6 } } },
       }),
     });
 
@@ -86,7 +86,7 @@ export async function renderAnalitica(pageEl) {
       },
       options: baseOptions({
         plugins: { legend: { position: "bottom", labels: chartTheme.legendLabels } },
-        scales: { x: { stacked: true, grid: { display: false }, ticks: { color: tickColor } }, y: { stacked: true, grid: { color: gridColor }, ticks: { color: tickColor, callback: (v) => "$" + (v / 1000000).toFixed(1) + "M" } } },
+        scales: { x: { stacked: true, grid: { display: false }, ticks: { color: tickColor } }, y: { stacked: true, beginAtZero: true, suggestedMax: 100000, grid: { color: gridColor }, ticks: { color: tickColor, callback: fmtAxis, maxTicksLimit: 6 } } },
       }),
     });
 
@@ -121,7 +121,7 @@ export async function renderAnalitica(pageEl) {
       },
       options: baseOptions({
         plugins: { legend: { display: false }, tooltip: { callbacks: { label: (ctx) => " " + fmt(ctx.raw) } } },
-        scales: { x: { grid: { display: false }, ticks: { color: tickColor } }, y: { grid: { color: gridColor }, ticks: { color: tickColor, callback: (v) => "$" + (v / 1000).toFixed(0) + "k" } } },
+        scales: { x: { grid: { display: false }, ticks: { color: tickColor } }, y: { beginAtZero: true, suggestedMax: 100000, grid: { color: gridColor }, ticks: { color: tickColor, callback: fmtAxis, maxTicksLimit: 6 } } },
       }),
     });
   }

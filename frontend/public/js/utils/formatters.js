@@ -9,6 +9,17 @@ export function fmtMoney(amount, currency = "COP") {
   return currency && currency !== "COP" ? `${fmt(amount)} ${currency}` : fmt(amount);
 }
 
+/** Eje de gráficos: compacto y sin decimales sobrantes ($0, $850, $12k, $1,5M). */
+export function fmtAxis(value) {
+  const v = Number(value) || 0;
+  const abs = Math.abs(v);
+  const sign = v < 0 ? "-" : "";
+  const trim = (n) => n.toLocaleString("es-CO", { maximumFractionDigits: 1 });
+  if (abs >= 1e6) return `${sign}$${trim(abs / 1e6)}M`;
+  if (abs >= 1e3) return `${sign}$${trim(abs / 1e3)}k`;
+  return `${sign}$${Math.round(abs)}`;
+}
+
 export function fmtSigned(amount) {
   const n = Number(amount) || 0;
   return (n < 0 ? "-" : "+") + fmt(Math.abs(n));

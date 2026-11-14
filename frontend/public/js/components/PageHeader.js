@@ -71,13 +71,21 @@ function handleAccountClick() {
 }
 
 export function PageHeader({ eyebrow, title, pillLabel, onBellClick }) {
+  // El mes va dos veces: junto al título en celular y en la barra de acciones
+  // en escritorio; el CSS muestra solo una según el ancho.
   return h("header", { class: "page-header" }, [
-    h("div", {}, [h("p", { class: "page-header__eyebrow" }, eyebrow), h("h1", { class: "page-header__title" }, title)]),
-    h("div", { class: "flex items-center gap-3" }, [
+    h("div", { class: "page-header__text" }, [
+      h("p", { class: "page-header__eyebrow" }, eyebrow),
+      h("h1", { class: "page-header__title" }, title),
+      pillLabel ? h("p", { class: "page-header__period" }, pillLabel) : null,
+    ]),
+    h("div", { class: "page-header__actions" }, [
       pillLabel ? Pill({ label: pillLabel }) : null,
-      IconButton({ iconName: "bell", dot: true, onClick: onBellClick, ariaLabel: "Notificaciones" }),
-      IconButton({ iconName: "user", onClick: handleAccountClick, ariaLabel: "Tu cuenta" }),
-      IconButton({ iconName: "x", onClick: handleLogoutClick, ariaLabel: "Cerrar sesión" }),
+      h("div", { class: "page-header__tools glass" }, [
+        IconButton({ iconName: "bell", dot: true, onClick: onBellClick, ariaLabel: "Notificaciones" }),
+        IconButton({ iconName: "user", onClick: handleAccountClick, ariaLabel: "Tu cuenta" }),
+        IconButton({ iconName: "x", onClick: handleLogoutClick, ariaLabel: "Cerrar sesión" }),
+      ]),
     ]),
   ]);
 }

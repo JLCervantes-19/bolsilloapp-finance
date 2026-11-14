@@ -1,7 +1,7 @@
 import { h, clear, append } from "../utils/dom.js";
 import { financialService } from "../services/financialService.js";
 import { store } from "../store/store.js";
-import { fmt, firstName } from "../utils/formatters.js";
+import { fmt, firstName, fmtAxis } from "../utils/formatters.js";
 import { SummaryCard } from "../components/SummaryCard.js";
 import { ChangeIndicator } from "../components/ChangeIndicator.js";
 import { ProgressBar } from "../components/ProgressBar.js";
@@ -42,7 +42,7 @@ export function barConfig(labels, income, expense, names = { income: "Ingresos",
       },
       scales: {
         x: { grid: { display: false }, ticks: { color: chartTheme.tickColor, font: { size: 11 } } },
-        y: { grid: { color: chartTheme.gridColor }, ticks: { color: chartTheme.tickColor, callback: (v) => "$" + (v / 1000000).toFixed(1) + "M", font: { size: 10 } } },
+        y: { beginAtZero: true, suggestedMax: 100000, grid: { color: chartTheme.gridColor }, ticks: { color: chartTheme.tickColor, callback: fmtAxis, maxTicksLimit: 6, font: { size: 10 } } },
       },
     },
   };
@@ -95,7 +95,7 @@ export function lineConfig(labels, networth, label = "Patrimonio") {
       plugins: { legend: { display: false }, tooltip: { callbacks: { label: (ctx) => " " + fmt(ctx.raw) } } },
       scales: {
         x: { grid: { display: false }, ticks: { color: chartTheme.tickColor } },
-        y: { grid: { color: chartTheme.gridColor }, ticks: { color: chartTheme.tickColor, callback: (v) => "$" + (v / 1000).toFixed(0) + "k" } },
+        y: { beginAtZero: true, suggestedMax: 100000, grid: { color: chartTheme.gridColor }, ticks: { color: chartTheme.tickColor, callback: fmtAxis, maxTicksLimit: 6 } },
       },
     },
   };

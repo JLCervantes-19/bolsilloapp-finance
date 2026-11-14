@@ -88,9 +88,14 @@ function AppShell(pageEl, activeRoute) {
     return h("div", { class: "app-shell app-shell--desktop", style: `--pocket-color:${color}` }, [h("div", { class: "pocket-strip", "aria-hidden": "true" }), chrome.sidebar, content]);
   }
   chrome.sidebar = null;
-  chrome.bar = h("div", { class: "pocket-bar-slot" }, [PocketBar({ pocket: isAll() ? null : pocket, onOpen: openPocketSheet })]);
-  const content = h("main", { class: "app-main" }, [chrome.bar, tabs, pageEl]);
-  return h("div", { class: "app-shell", style: `--pocket-color:${color}` }, [h("div", { class: "pocket-strip", "aria-hidden": "true" }), content, BottomNav({ activeRoute, onFabClick: openQuickAdd })]);
+  // El selector de bolsillo vive en la barra inferior (arriba quedaba bajo la hora del iPhone).
+  chrome.bar = h("span", { class: "pocket-nav-slot" }, [PocketBar({ pocket: isAll() ? null : pocket, onOpen: openPocketSheet })]);
+  const content = h("main", { class: "app-main" }, [tabs, pageEl]);
+  return h("div", { class: "app-shell", style: `--pocket-color:${color}` }, [
+    h("div", { class: "pocket-strip", "aria-hidden": "true" }),
+    content,
+    BottomNav({ activeRoute, onFabClick: openQuickAdd, pocketSlot: chrome.bar }),
+  ]);
 }
 
 // Cuentas creadas con correo (antes de quitar los correos): eligen usuario
